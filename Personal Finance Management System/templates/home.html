@@ -312,17 +312,6 @@
          <br>
      </div>
 
-     <!-- <div class="container">
-      <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
-        <div class="col-md-4 d-flex align-items-center">
-          <a href="/" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
-            <svg class="bi" width="30" height="24"><use xlink:href="#bootstrap"/></svg>
-          </a>
-          <span class="text-muted">&copy; 2022 Expense Tracker, Inc</span>
-        </div>
-      </footer>
-    </div> -->
-
     <script type="text/javascript">
         setTimeout(function () {
                     // Closing the alert
@@ -339,24 +328,29 @@
     </body>
 
     <script type='text/javascript'>
-      var graphs = {{bar | safe}};
-      Plotly.plot('bar',graphs,{});
+          var bar_data = {{ bar | safe }};
+          Plotly.newPlot('bar', bar_data, {});
 
-      var graphs4 = {{stack_bar | safe}};
-      Plotly.plot('stack',graphs4,{});
+          var stack_data = {{ stack_bar | safe }};
+          Plotly.newPlot('stack', stack_data, {});
 
-      var pie_graph1 = {{pie1 | safe}};
-      var pie_graph2 = {{pie2 | safe}};
-      var pie_graph3 = {{pie3 | safe}};
-      var pie_graph4 = {{pie4 | safe}};
-      var pie_graph5 = {{pie5 | safe}};
-      var pie_graph6 = {{pie6 | safe}};
-      Plotly.plot('pie11',pie_graph1,{});
-      Plotly.plot('pie22',pie_graph2,{});
-      Plotly.plot('pie55',pie_graph5,{});
-      Plotly.plot('pie33',pie_graph3,{});
-      Plotly.plot('pie44',pie_graph4,{});
-      Plotly.plot('pie66',pie_graph6,{});
+          var pie1_data = {{ pie1 | safe }};
+          Plotly.newPlot('pie11', pie1_data, {});
 
+          var pie2_data = {{ pie2 | safe }};
+          Plotly.newPlot('pie22', pie2_data, {});
+
+          var pie3_data = {{ pie3 | safe }};
+          Plotly.newPlot('pie33', pie3_data, {});
+
+          var pie4_data = {{ pie4 | safe }};
+          Plotly.newPlot('pie44', pie4_data, {});
+
+          var pie5_data = {{ pie5 | safe }};
+          Plotly.newPlot('pie55', pie5_data, {});
+
+          var pie6_data = {{ pie6 | safe }};
+          Plotly.newPlot('pie66', pie6_data, {});
     </script>
+
 </html>
