@@ -6,6 +6,8 @@ import json
 import warnings
 import pymysql
 import support
+import re
+from datetime import datetime
 
 warnings.filterwarnings("ignore")
 
@@ -130,23 +132,43 @@ def register():
 @app.route('/registration', methods=['POST'])
 def registration():
     if 'user_id' not in session:
-        name = request.form.get('name')
-        email = request.form.get('email')
-        passwd = request.form.get('password')
-        if len(name) > 5 and len(email) > 10 and len(passwd) > 5:
-            try:
-                query = f"INSERT INTO user_login(username, email, password) VALUES('{name}','{email}','{passwd}')"
-                execute_query('insert', query)
+        name = request.form.get('name').strip()
+        email = request.form.get('email').strip()
+        passwd = request.form.get('password').strip()
 
-                user = execute_query('search', f"SELECT * FROM user_login WHERE email = '{email}'")
-                session['user_id'] = user[0][0]
-                flash("Successfully Registered!")
-                return redirect('/home')
-            except:
-                flash("Email ID already exists, use another email!")
-                return redirect('/register')
-        else:
-            flash("Not enough data to register, try again!")
+        # Name verification: Ensure the name contains only alphabetic characters and is at least 5 characters long
+        if not name.replace(" ", "").isalpha() or len(name) < 5:
+            flash("Name must be at least 5 characters long and contain only alphabetic characters.")
+            return redirect('/register')
+
+        # Email verification: Ensure the email is in the correct format
+        email_regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        if not re.match(email_regex, email):
+            flash("Invalid email format. Please enter a valid email address.")
+            return redirect('/register')
+
+        # Password length verification
+        if len(passwd) < 6:
+            flash("Password must be at least 6 characters long.")
+            return redirect('/register')
+
+        # Check if the email already exists in the database
+        existing_user = execute_query('search', f"SELECT * FROM user_login WHERE email = '{email}'")
+        if existing_user:
+            flash("Email ID already exists, use another email!")
+            return redirect('/register')
+
+        # If all checks pass, proceed with registration
+        try:
+            query = f"INSERT INTO user_login(username, email, password) VALUES('{name}','{email}','{passwd}')"
+            execute_query('insert', query)
+
+            user = execute_query('search', f"SELECT * FROM user_login WHERE email = '{email}'")
+            session['user_id'] = user[0][0]
+            flash("Successfully Registered!")
+            return redirect('/home')
+        except Exception as e:
+            flash(f"An error occurred during registration: {e}")
             return redirect('/register')
     else:
         flash("Already a user is logged-in!")
@@ -231,7 +253,7 @@ def home():
                                monthly_data=monthly_data,
                                card_data=card_data,
                                goals=goals,
-                               table_data=table_data[-5:],
+                               table_data=table_data[0:5],
                                bar=json.dumps(bar),
                                line=json.dumps(line),
                                stack_bar=json.dumps(stack_bar),
@@ -255,6 +277,11 @@ def add_expense():
             expense = request.form.get('e_type')
             amount = request.form.get('amount')
             notes = request.form.get('notes')
+
+            if datetime.strptime(date, '%Y-%m-%d') > datetime.now():
+                flash("Date cannot be in the future.")
+                return redirect("/home")
+
             try:
                 query = f"INSERT INTO user_expenses (user_id, pdate, expense, amount, pdescription) VALUES ({user_id}, '{date}', '{expense}', {amount}, '{notes}')"
                 execute_query('insert', query)
@@ -267,24 +294,24 @@ def add_expense():
         return redirect('/')
 
 
-@app.route('/home/add_income', methods=['POST'])
-def add_income():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        if request.method == 'POST':
-            date = request.form.get('i_date')
-            income = request.form.get('income')
-            details = request.form.get('details')
-            try:
-                query = f"INSERT INTO income (user_id, income, details, date) VALUES ({user_id}, {income}, '{details}', '{date}')"
-                execute_query('insert', query)
-                flash("Income Added Successfully!")
-            except Exception as e:
-                flash(f"Something went wrong: {e}")
-                return redirect("/home")
-            return redirect('/home')
-    else:
-        return redirect('/')
+# @app.route('/home/add_income', methods=['POST'])
+# def add_income():
+#     if 'user_id' in session:
+#         user_id = session['user_id']
+#         if request.method == 'POST':
+#             date = request.form.get('i_date')
+#             income = request.form.get('income')
+#             details = request.form.get('details')
+#             try:
+#                 query = f"INSERT INTO income (user_id, income, details, date) VALUES ({user_id}, {income}, '{details}', '{date}')"
+#                 execute_query('insert', query)
+#                 flash("Income Added Successfully!")
+#             except Exception as e:
+#                 flash(f"Something went wrong: {e}")
+#                 return redirect("/home")
+#             return redirect('/home')
+#     else:
+#         return redirect('/')
 
 
 @app.route('/analysis')
@@ -433,7 +460,7 @@ def update_profile():
 def logout():
     session.clear()  # Clear all session data
     flash('You have been logged out.', 'info')  # Optional: Display a logout message
-    return redirect('/login')  # Redirect to the login page
+    return redirect('/')  # Redirect to the login page
 
 
 if __name__ == "__main__":
