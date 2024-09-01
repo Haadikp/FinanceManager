@@ -276,7 +276,15 @@ def add_expense():
             date = request.form.get('e_date')
             expense = request.form.get('e_type')
             amount = request.form.get('amount')
-            notes = request.form.get('notes')
+
+            # Get selected note from the dropdown
+            selected_note = request.form.get('notes_dropdown')
+
+            # Get custom note entered by the user
+            custom_note = request.form.get('custom_note')
+
+            # Determine which note to use (custom note takes precedence if provided)
+            notes = custom_note if custom_note.strip() != "" else selected_note
 
             if datetime.strptime(date, '%Y-%m-%d') > datetime.now():
                 flash("Date cannot be in the future.")
@@ -286,9 +294,10 @@ def add_expense():
                 query = f"INSERT INTO user_expenses (user_id, pdate, expense, amount, pdescription) VALUES ({user_id}, '{date}', '{expense}', {amount}, '{notes}')"
                 execute_query('insert', query)
                 flash("Saved!")
-            except:
-                flash("Something went wrong.")
+            except Exception as e:
+                flash(f"Something went wrong: {str(e)}")
                 return redirect("/home")
+
             return redirect('/home')
     else:
         return redirect('/')
