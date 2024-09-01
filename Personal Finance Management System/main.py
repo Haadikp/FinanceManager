@@ -303,6 +303,7 @@ def add_expense():
         return redirect('/')
 
 
+
 # @app.route('/home/add_income', methods=['POST'])
 # def add_income():
 #     if 'user_id' in session:
