@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, flash, jsonify
+from flask import Flask, render_template, request, url_for, redirect, session, flash, jsonify
 import os
 from datetime import timedelta
 import pandas as pd
@@ -8,6 +8,10 @@ import pymysql
 import support
 import re
 from datetime import datetime
+from itsdangerous import URLSafeTimedSerializer
+from flask_mail import Mail, Message
+
+
 
 warnings.filterwarnings("ignore")
 
@@ -19,15 +23,15 @@ db = pymysql.connect(
     database="personal_finance_management_system"
 )
 
-# Initialize Flask app
+# Initialize Flask app, __name__ is passed to tell Flask the location of the app
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.urandom(24)  #secret key for the Flask app to secure session data.
 
 
 # Helper function to execute queries
 def execute_query(query_type, query, params=None):
     try:
-        cursor = db.cursor()
+        cursor = db.cursor() #Creates a cursor object
         cursor.execute(query, params or ())
         if query_type == "search":
             result = cursor.fetchall()
@@ -72,7 +76,7 @@ def check_alerts(user_id):
 @app.route('/')
 def login():
     session.permanent = True
-    app.permanent_session_lifetime = timedelta(minutes=15)
+    app.permanent_session_lifetime = timedelta(minutes=25)
     if 'user_id' in session:
         flash("Already a user is logged-in!")
         return redirect('/home')
@@ -98,26 +102,70 @@ def login_validation():
         return redirect('/home')
 
 
+
+# Initialize Flask-Mail
+mail = Mail(app)
+app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'hadikpkuniyil2@gmail.com'
+app.config['MAIL_PASSWORD'] = 'qrki ygxg qjlj vkmp'
+app.config['MAIL_DEFAULT_SENDER'] = 'hadikpkuniyil2@gmail.com'
+app.config['MAIL_DEBUG'] = True
+
+# Password reset route
 @app.route('/reset', methods=['POST'])
 def reset():
     if 'user_id' not in session:
         email = request.form.get('femail')
-        pswd = request.form.get('pswd')
         userdata = execute_query('search', f"SELECT * FROM user_login WHERE email = '{email}'")
         if userdata:
-            try:
-                query = f"UPDATE user_login SET password = '{pswd}' WHERE email = '{email}'"
-                execute_query('insert', query)
-                flash("Password has been changed!")
-                return redirect('/')
-            except:
-                flash("Something went wrong!")
-                return redirect('/')
+            # Generate token
+            s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+            token = s.dumps(email, salt='email-reset-salt')
+
+            # Create reset link
+            reset_link = url_for('reset_with_token', token=token, _external=True)
+
+            # Send email
+            msg = Message("Password Reset Request",
+                          sender="hadikpkuniyil2@gmail.com",
+                          recipients=[email])
+            msg.body = f"To reset your password, click the following link: {reset_link}"
+            mail.send(msg)
+
+            flash("A password reset link has been sent to your email.")
+            return redirect('/')
         else:
             flash("Invalid email address!")
             return redirect('/')
     else:
         return redirect('/home')
+
+
+# Route for resetting password using the token
+@app.route('/reset/<token>', methods=['GET', 'POST'])
+def reset_with_token(token):
+    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    try:
+        email = s.loads(token, salt='email-reset-salt', max_age=3600)  # 1 hour expiration
+    except:
+        flash('The reset link is invalid or has expired.')
+        return redirect('/')
+
+    if request.method == 'POST':
+        pswd = request.form.get('pswd')
+        try:
+            query = f"UPDATE user_login SET password = '{pswd}' WHERE email = '{email}'"
+            execute_query('insert', query)
+            flash("Password has been changed!")
+            return redirect('/')
+        except:
+            flash("Something went wrong!")
+            return redirect('/')
+    return render_template('reset_password.html', token=token)
 
 
 @app.route('/register')
@@ -148,8 +196,8 @@ def registration():
             return redirect('/register')
 
         # Password length verification
-        if len(passwd) < 6:
-            flash("Password must be at least 6 characters long.")
+        if len(passwd) < 5:
+            flash("Password must be at least 5 characters long.")
             return redirect('/register')
 
         # Check if the email already exists in the database
@@ -443,18 +491,27 @@ def update_profile():
         query = f"SELECT * FROM user_login WHERE email = '{email}' AND user_id != {session['user_id']}"
         email_list = execute_query('search', query)
 
+        # Updating User Profile
+        # If both the name and email are different from the current values and the email is not taken by another user
         if name != userdata[0][1] and email != userdata[0][2] and len(email_list) == 0:
             query = f"UPDATE user_login SET username = '{name}', email = '{email}' WHERE user_id = {session['user_id']}"
             execute_query('insert', query)
             flash("Name and Email updated!")
+
+        # email is already taken by another user
         elif name != userdata[0][1] and email != userdata[0][2] and len(email_list) > 0:
             flash("Email already exists, try another!")
+
+        # only email is different and not already taken
         elif name == userdata[0][1] and email != userdata[0][2] and len(email_list) == 0:
             query = f"UPDATE user_login SET email = '{email}' WHERE user_id = {session['user_id']}"
             execute_query('insert', query)
             flash("Email updated!")
+
         elif name == userdata[0][1] and email != userdata[0][2] and len(email_list) > 0:
             flash("Email already exists, try another!")
+
+        # If only the name is different
         elif name != userdata[0][1] and email == userdata[0][2]:
             query = f"UPDATE user_login SET username = '{name}' WHERE user_id = {session['user_id']}"
             execute_query('insert', query)
