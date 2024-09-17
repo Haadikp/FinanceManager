@@ -15,10 +15,6 @@ import random
 import plotly.express as px
 import plotly.graph_objs as go
 
-
-
-
-
 warnings.filterwarnings("ignore")
 
 # Database connection setup
@@ -37,18 +33,31 @@ app.secret_key = os.urandom(24)  #secret key for the Flask app to secure session
 # Helper function to execute queries
 def execute_query(query_type, query, params=None):
     try:
-        cursor = db.cursor() #Creates a cursor object
+        cursor = db.cursor()  # Create a cursor object
         cursor.execute(query, params or ())
+
         if query_type == "search":
             result = cursor.fetchall()
             cursor.close()
             return result
         elif query_type == "insert":
-            db.commit()
+            db.commit()  # Commit the changes if it is an insert query
             cursor.close()
+            return
+
+    except pymysql.MySQLError as e:
+        db.rollback()  # Rollback in case of error
+        cursor.close()
+        print(f"Database error: {e}")
+        flash("An error occurred while processing your request.")
+        # Handle or log the error as needed
+        return None
     except Exception as e:
-        print(f"An error occurred: {e}")
-        db.rollback()
+        cursor.close()
+        print(f"Unexpected error: {e}")
+        flash("An unexpected error occurred.")
+        # Handle or log the error as needed
+        return None
 
 
 # User alert logic
@@ -90,7 +99,6 @@ def login():
         return render_template("login.html")
 
 
-
 @app.route('/login_validation', methods=['POST', 'GET'])
 def login_validation():
     if 'user_id' not in session:
@@ -100,7 +108,7 @@ def login_validation():
         users = execute_query("search", query, (email,))
 
         if users:
-            stored_password = users[0][3]   # Assuming the password is in the 4th column (hashed password)
+            stored_password = users[0][3]  # Assuming the password is in the 4th column (hashed password)
             print(passwd.encode('utf-8'))
             print(stored_password.encode('utf-8'))
             if bcrypt.checkpw(passwd.encode('utf-8'), stored_password.encode('utf-8')):
@@ -115,10 +123,6 @@ def login_validation():
     else:
         flash("Already a user is logged-in!")
         return redirect('/home')
-
-
-
-
 
 
 # Flask-Mail configuration
@@ -200,7 +204,6 @@ def verify_otp():
     return render_template('verify_otp.html')
 
 
-
 @app.route('/register')
 def register():
     if 'user_id' in session:
@@ -208,8 +211,6 @@ def register():
         return redirect('/home')
     else:
         return render_template("register.html")
-
-
 
 
 @app.route('/registration', methods=['POST'])
@@ -253,8 +254,6 @@ def registration():
     else:
         flash("Already a user is logged-in!")
         return redirect('/home')
-
-
 
 
 @app.route('/contact')
@@ -350,6 +349,7 @@ def home():
         return redirect('/')
 
 
+
 @app.route('/home/add_expense', methods=['POST'])
 def add_expense():
     if 'user_id' in session:
@@ -385,33 +385,58 @@ def add_expense():
         return redirect('/')
 
 
-
-# @app.route('/home/add_income', methods=['POST'])
-# def add_income():
-#     if 'user_id' in session:
-#         user_id = session['user_id']
-#         if request.method == 'POST':
-#             date = request.form.get('i_date')
-#             income = request.form.get('income')
-#             details = request.form.get('details')
-#             try:
-#                 query = f"INSERT INTO income (user_id, income, details, date) VALUES ({user_id}, {income}, '{details}', '{date}')"
-#                 execute_query('insert', query)
-#                 flash("Income Added Successfully!")
-#             except Exception as e:
-#                 flash(f"Something went wrong: {e}")
-#                 return redirect("/home")
-#             return redirect('/home')
-#     else:
-#         return redirect('/')
+def get_finance_data(user_id):
+    # Mock data for illustration, replace with actual database queries
+    income_data = [{'date': '2024-01', 'amount': 3000}, {'date': '2024-02', 'amount': 3200}]
+    expense_data = [{'date': '2024-01', 'category': 'Food', 'amount': 500},
+                    {'date': '2024-01', 'category': 'Rent', 'amount': 1000},
+                    {'date': '2024-02', 'category': 'Transport', 'amount': 150}]
+    return income_data, expense_data
 
 
 @app.route('/analysis')
 def analysis():
-    if 'user_id' in session:
-        return render_template("analysis.html")
-    else:
-        return redirect('/')
+    user_id = session.get('user_id')  # Fetch user id from session
+    user_name = session.get('user_name')
+
+    # Get user finance data (income and expenses)
+    income_data, expense_data = get_finance_data(user_id)
+
+    # Calculate summary stats
+    total_income = sum([item['amount'] for item in income_data])
+    total_expenses = sum([item['amount'] for item in expense_data])
+    net_savings = total_income - total_expenses
+    goal_progress = (net_savings / total_income) * 100 if total_income > 0 else 0
+
+    # Create charts with Plotly
+    # Pie chart for Income vs. Expenses
+    pie_data = go.Figure(data=[go.Pie(labels=['Income', 'Expenses'],
+                                      values=[total_income, total_expenses])])
+
+    # Stack bar chart for expenses by category
+    df_expense = pd.DataFrame(expense_data)
+    stack_bar = px.bar(df_expense, x='category', y='amount', color='category')
+
+    # Line chart for income trends
+    df_income = pd.DataFrame(income_data)
+    line_graph = px.line(df_income, x='date', y='amount', title='Income Over Time')
+
+    # Other charts (scatter, heatmap, etc.) would be similarly created here.
+
+    # Pass data to template
+    return render_template('analysis.html',
+                           user_name=user_name,
+                           total_income=total_income,
+                           total_expenses=total_expenses,
+                           net_savings=net_savings,
+                           goal_progress=goal_progress,
+                           pie1=pie_data.to_json(),
+                           stack_bar=stack_bar.to_json(),
+                           line=line_graph.to_json(),
+                           scatter_graph={},  # Add scatter data
+                           heat_graph={},  # Add heatmap data
+                           month_graph={},  # Add monthly bar chart
+                           sun_graph={})  # Add sunburst data
 
 
 @app.route('/alerts', methods=['GET', 'POST'])
@@ -443,6 +468,7 @@ def alerts():
 
     return render_template("alerts.html", alerts=alerts)
 
+
 @app.route('/alerts/delete', methods=['POST'])
 def delete_alert():
     if 'user_id' not in session:
@@ -457,6 +483,7 @@ def delete_alert():
         flash(f"An error occurred: {e}")
 
     return redirect('/alerts')
+
 
 @app.route('/alerts/edit', methods=['POST'])
 def edit_alert():
@@ -474,6 +501,7 @@ def edit_alert():
         flash(f"An error occurred: {e}")
 
     return redirect('/alerts')
+
 
 @app.route('/alerts/toggle', methods=['POST'])
 def toggle_alert():
@@ -556,6 +584,7 @@ def update_profile():
         return redirect('/profile')
     else:
         return redirect('/')
+
 
 @app.route('/logout')
 def logout():

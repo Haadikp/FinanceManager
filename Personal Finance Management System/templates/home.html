@@ -45,7 +45,7 @@
              <div class="col-md-3">
                  <div class="card deep-purple my-1">
                      <div class="card-body ">
-                         <h5 class="text-center">Total Earnings</h5>
+                         <h5 class="text-center">Total Income</h5>
                          <h2 class="text-center">₹ {{ earning }}</h2>
                      </div>
                  </div>
@@ -53,7 +53,7 @@
              <div class="col-md-3">
                  <div class="card alive my-1">
                      <div class="card-body ">
-                         <h5 class="text-center">Total Spends</h5>
+                         <h5 class="text-center">Total Expense</h5>
                          <h2 class="text-center">₹ {{ spend }}</h2>
                      </div>
                  </div>
@@ -101,9 +101,9 @@
                                     <form class="form" method="post" action="/home/add_expense" >
                                         <input type="date" class="form-control my-1" id="e_date" name="e_date" placeholder="Select Date" required>
                                         <select class="form-control my-1" name="e_type" required>
-                                            <option selected hidden value="None">Expense type...</option>
-                                            <option value="Earning">Earning</option>
-                                            <option value="Spend">Spend</option>
+                                            <option selected hidden value="None">Transaction type...</option>
+                                            <option value="Earning">Income</option>
+                                            <option value="Spend">Expense</option>
                                             <option value="Investment">Investment</option>
                                             <!-- <option value="Saving">Saving</option> -->
                                         </select>
@@ -149,7 +149,7 @@
                                         <!-- OR allow user to add custom notes -->
                                             <label for="custom_note"> add a custom note:</label>
                                             <input type="text" class="form-control my-1" id="custom_note" name="custom_note" placeholder="Enter your custom note">
-                                
+
 
                                         <input type="submit" class="btn my-2 btn-primary btn-block" id="add" name="add" value="Submit">
                                     </form>
