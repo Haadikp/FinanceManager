@@ -1,5 +1,7 @@
+import bcrypt
 from flask import Flask, render_template, request, url_for, redirect, session, flash, jsonify
 import os
+from itsdangerous import URLSafeTimedSerializer
 from datetime import timedelta
 import pandas as pd
 import json
@@ -8,8 +10,12 @@ import pymysql
 import support
 import re
 from datetime import datetime
-from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Mail, Message
+import random
+import plotly.express as px
+import plotly.graph_objs as go
+
+
 
 
 
@@ -84,18 +90,27 @@ def login():
         return render_template("login.html")
 
 
-@app.route('/login_validation', methods=['POST'])
+
+@app.route('/login_validation', methods=['POST', 'GET'])
 def login_validation():
     if 'user_id' not in session:
-        email = request.form.get('email')
-        passwd = request.form.get('password')
-        query = f"SELECT * FROM user_login WHERE email = '{email}' AND password = '{passwd}'"
-        users = execute_query("search", query)
+        email = request.form.get('email').strip()
+        passwd = request.form.get('password').strip()
+        query = "SELECT * FROM user_login WHERE email = %s"
+        users = execute_query("search", query, (email,))
+
         if users:
-            session['user_id'] = users[0][0]
-            return redirect('/home')
+            stored_password = users[0][3]   # Assuming the password is in the 4th column (hashed password)
+            print(passwd.encode('utf-8'))
+            print(stored_password.encode('utf-8'))
+            if bcrypt.checkpw(passwd.encode('utf-8'), stored_password.encode('utf-8')):
+                session['user_id'] = users[0][0]
+                return redirect('/home')
+            else:
+                flash("Incorrect password. Please try again.")
+                return redirect('/')
         else:
-            flash("Invalid email and password!")
+            flash("No account found with this email address.")
             return redirect('/')
     else:
         flash("Already a user is logged-in!")
@@ -103,41 +118,45 @@ def login_validation():
 
 
 
-# Initialize Flask-Mail
+
+
+
+# Flask-Mail configuration
 mail = Mail(app)
 app.config['SECRET_KEY'] = 'your_secret_key'
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'hadikpkuniyil2@gmail.com'
-app.config['MAIL_PASSWORD'] = 'qrki ygxg qjlj vkmp'
-app.config['MAIL_DEFAULT_SENDER'] = 'hadikpkuniyil2@gmail.com'
+app.config['MAIL_USERNAME'] = 'kpgadgetsarena@gmail.com'
+app.config['MAIL_PASSWORD'] = 'voxo isgt wxoi sqeb'
+app.config['MAIL_DEFAULT_SENDER'] = 'kpgadgetsarena@gmail.com'
 app.config['MAIL_DEBUG'] = True
 
-# Password reset route
+
+# Password reset route using OTP
 @app.route('/reset', methods=['POST'])
 def reset():
     if 'user_id' not in session:
         email = request.form.get('femail')
         userdata = execute_query('search', f"SELECT * FROM user_login WHERE email = '{email}'")
         if userdata:
-            # Generate token
-            s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-            token = s.dumps(email, salt='email-reset-salt')
+            # Generate a 6-digit OTP
+            otp = random.randint(100000, 999999)
 
-            # Create reset link
-            reset_link = url_for('reset_with_token', token=token, _external=True)
+            # Store OTP and email in session for later validation
+            session['reset_email'] = email
+            session['otp'] = otp
 
-            # Send email
-            msg = Message("Password Reset Request",
-                          sender="hadikpkuniyil2@gmail.com",
+            # Send OTP via email
+            msg = Message("Password Reset OTP",
+                          sender="kpgadgetsarena@gmail.com",
                           recipients=[email])
-            msg.body = f"To reset your password, click the following link: {reset_link}"
+            msg.body = f"Your OTP for password reset is: {otp}. This OTP will expire in 10 minutes."
             mail.send(msg)
 
-            flash("A password reset link has been sent to your email.")
-            return redirect('/')
+            flash("An OTP has been sent to your email.")
+            return redirect('/verify_otp')  # Redirect to OTP verification page
         else:
             flash("Invalid email address!")
             return redirect('/')
@@ -145,27 +164,41 @@ def reset():
         return redirect('/home')
 
 
-# Route for resetting password using the token
-@app.route('/reset/<token>', methods=['GET', 'POST'])
-def reset_with_token(token):
-    s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-    try:
-        email = s.loads(token, salt='email-reset-salt', max_age=3600)  # 1 hour expiration
-    except:
-        flash('The reset link is invalid or has expired.')
-        return redirect('/')
-
+# Route for verifying OTP and resetting password
+@app.route('/verify_otp', methods=['GET', 'POST'])
+def verify_otp():
     if request.method == 'POST':
-        pswd = request.form.get('pswd')
-        try:
-            query = f"UPDATE user_login SET password = '{pswd}' WHERE email = '{email}'"
-            execute_query('insert', query)
-            flash("Password has been changed!")
-            return redirect('/')
-        except:
-            flash("Something went wrong!")
-            return redirect('/')
-    return render_template('reset_password.html', token=token)
+        entered_otp = request.form.get('otp')
+        new_password = request.form.get('new_password')
+
+        if 'otp' in session and 'reset_email' in session:
+            if int(entered_otp) == session['otp']:
+                email = session['reset_email']
+
+                # Hash the new password before updating
+                hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+                try:
+                    query = "UPDATE user_login SET password = %s WHERE email = %s"
+                    execute_query('insert', query, (hashed_password, email))
+
+                    session.pop('otp', None)
+                    session.pop('reset_email', None)
+
+                    flash("Your password has been reset successfully!")
+                    return redirect('/')
+                except:
+                    flash("Something went wrong while resetting the password!")
+                    return redirect('/verify_otp')
+            else:
+                flash('Invalid OTP. Please try again.')
+                return redirect('/verify_otp')
+        else:
+            flash('Session expired or invalid. Please try again.')
+            return redirect('/reset')
+
+    return render_template('verify_otp.html')
+
 
 
 @app.route('/register')
@@ -177,6 +210,8 @@ def register():
         return render_template("register.html")
 
 
+
+
 @app.route('/registration', methods=['POST'])
 def registration():
     if 'user_id' not in session:
@@ -184,35 +219,32 @@ def registration():
         email = request.form.get('email').strip()
         passwd = request.form.get('password').strip()
 
-        # Name verification: Ensure the name contains only alphabetic characters and is at least 5 characters long
         if not name.replace(" ", "").isalpha() or len(name) < 5:
             flash("Name must be at least 5 characters long and contain only alphabetic characters.")
             return redirect('/register')
 
-        # Email verification: Ensure the email is in the correct format
         email_regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         if not re.match(email_regex, email):
             flash("Invalid email format. Please enter a valid email address.")
             return redirect('/register')
 
-        # Password length verification
         if len(passwd) < 5:
             flash("Password must be at least 5 characters long.")
             return redirect('/register')
 
-        # Check if the email already exists in the database
-        existing_user = execute_query('search', f"SELECT * FROM user_login WHERE email = '{email}'")
+        existing_user = execute_query('search', "SELECT * FROM user_login WHERE email = %s", (email,))
         if existing_user:
             flash("Email ID already exists, use another email!")
             return redirect('/register')
 
-        # If all checks pass, proceed with registration
         try:
-            query = f"INSERT INTO user_login(username, email, password) VALUES('{name}','{email}','{passwd}')"
-            execute_query('insert', query)
+            hashed_password = bcrypt.hashpw(passwd.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            query = "INSERT INTO user_login(username, email, password) VALUES(%s, %s, %s)"
+            execute_query('insert', query, (name, email, hashed_password))
 
-            user = execute_query('search', f"SELECT * FROM user_login WHERE email = '{email}'")
+            user = execute_query('search', "SELECT * FROM user_login WHERE email = %s", (email,))
             session['user_id'] = user[0][0]
+
             flash("Successfully Registered!")
             return redirect('/home')
         except Exception as e:
@@ -221,6 +253,8 @@ def registration():
     else:
         flash("Already a user is logged-in!")
         return redirect('/home')
+
+
 
 
 @app.route('/contact')
