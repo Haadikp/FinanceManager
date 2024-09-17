@@ -1,7 +1,6 @@
 import bcrypt
 from flask import Flask, render_template, request, url_for, redirect, session, flash, jsonify
 import os
-from itsdangerous import URLSafeTimedSerializer
 from datetime import timedelta
 import pandas as pd
 import json
@@ -32,6 +31,7 @@ app.secret_key = os.urandom(24)  #secret key for the Flask app to secure session
 
 # Helper function to execute queries
 def execute_query(query_type, query, params=None):
+    global cursor
     try:
         cursor = db.cursor()  # Create a cursor object
         cursor.execute(query, params or ())
