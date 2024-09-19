@@ -126,17 +126,15 @@ def login_validation():
 
 
 # Flask-Mail configuration
-mail = Mail(app)
-app.config['SECRET_KEY'] = 'your_secret_key'
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+
+app.config['SECRET_KEY'] = 'qwertyuiop'
+app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'kpgadgetsarena@gmail.com'
 app.config['MAIL_PASSWORD'] = 'voxo isgt wxoi sqeb'
-app.config['MAIL_DEFAULT_SENDER'] = 'kpgadgetsarena@gmail.com'
 app.config['MAIL_DEBUG'] = True
-
+mail = Mail(app)
 
 # Password reset route using OTP
 @app.route('/reset', methods=['POST'])
@@ -154,7 +152,7 @@ def reset():
 
             # Send OTP via email
             msg = Message("Password Reset OTP",
-                          sender="kpgadgetsarena@gmail.com",
+                          sender="noreply@app.com",
                           recipients=[email])
             msg.body = f"Your OTP for password reset is: {otp}. This OTP will expire in 10 minutes."
             mail.send(msg)

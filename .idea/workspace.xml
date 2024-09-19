@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="updated otp verification page">
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/personal-finance-management.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/verify_otp.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/main.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2lKheTMGDli6t82JcLlh3KUS2px" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.support.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-babbdf50b680-746f403e7f0c-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.15989.155" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="" />
+      <created>1724934773863</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1724934773863</updated>
+    </task>
+    <task id="LOCAL-00001" summary="updated main.py">
+      <option name="closed" value="true" />
+      <created>1725207330295</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1725207330295</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Added name,email,date verification">
+      <option name="closed" value="true" />
+      <created>1725212398789</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1725212398789</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Added custom notes option">
+      <option name="closed" value="true" />
+      <created>1725215655157</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1725215655157</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Added custom notes option">
+      <option name="closed" value="true" />
+      <created>1725217112158</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1725217112158</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Updated alert system and expense tracking feature">
+      <option name="closed" value="true" />
+      <created>1725301263646</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1725301263646</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Added password reset feature">
+      <option name="closed" value="true" />
+      <created>1726404884859</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1726404884859</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Added password hashing">
+      <option name="closed" value="true" />
+      <created>1726560018302</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1726560018302</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Added analysis page">
+      <option name="closed" value="true" />
+      <created>1726569648988</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1726569648988</updated>
+    </task>
+    <task id="LOCAL-00009" summary="updated analysis page">
+      <option name="closed" value="true" />
+      <created>1726572717951</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1726572717951</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
+    <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="updated main.py" />
+    <MESSAGE value="Added name,email,date verification" />
+    <MESSAGE value="Addes custom notes option" />
+    <MESSAGE value="Added custom notes option" />
+    <MESSAGE value="Updated alert system and expense tracking feature" />
+    <MESSAGE value="Added password reset feature" />
+    <MESSAGE value="Added password hashing" />
+    <MESSAGE value="Added analysis page" />
+    <MESSAGE value="updated analysis page" />
+    <MESSAGE value="updated otp verification page" />
+    <option name="LAST_COMMIT_MESSAGE" value="updated otp verification page" />
+  </component>
+</project>
