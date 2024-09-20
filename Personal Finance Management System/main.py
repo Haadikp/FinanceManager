@@ -13,6 +13,7 @@ from flask_mail import Mail, Message
 import random
 import plotly.express as px
 import plotly.graph_objs as go
+import traceback
 
 warnings.filterwarnings("ignore")
 
@@ -281,19 +282,39 @@ def home():
         df = pd.DataFrame(table_data, columns=['#', 'User_Id', 'Date', 'Expense', 'Amount', 'Note'])
 
         df = support.generate_df(df)
-        try:
-            earning, spend, invest, saving = support.top_tiles(df)
-        except:
-            earning, spend, invest, saving = 0, 0, 0, 0
 
+        # Initialize earnings, spend, invest, and savings
+        earning, spend, invest, saving = 0, 0, 0, 0
+
+        # Check for income and expense data to handle empty DataFrame gracefully
+        if not df.empty:
+            try:
+                earning, spend, invest, saving = support.top_tiles(df)
+
+                # Calculate total income and total expenses
+                total_income = df[df['Expense'] == 'Earning']['Amount'].sum()
+                total_expenses = df[df['Expense'] == 'Spend']['Amount'].sum()
+                savings = total_income - total_expenses
+                # Validate that expenses are not greater than income
+                if total_expenses > total_income:
+                    flash("Warning: Your total expenses exceed your total income!")
+
+            except Exception as e:
+                # Handle errors in calculating top_tiles
+                flash(f"Error calculating financial data: {str(e)}")
+                earning, spend, invest, saving = 0, 0, 0, 0
+
+        # Proceed with generating graphs and other statistics
         try:
             bar, pie, line, stack_bar = support.generate_Graph(df)
         except:
             bar, pie, line, stack_bar = None, None, None, None
+
         try:
             monthly_data = support.get_monthly_data(df, res=None)
         except:
             monthly_data = []
+
         try:
             card_data = support.sort_summary(df)
         except:
@@ -328,7 +349,7 @@ def home():
                                earning=earning,
                                spend=spend,
                                invest=invest,
-                               saving=saving,
+                               saving=savings,
                                monthly_data=monthly_data,
                                card_data=card_data,
                                goals=goals,
@@ -345,7 +366,6 @@ def home():
                                )
     else:
         return redirect('/')
-
 
 
 @app.route('/home/add_expense', methods=['POST'])
@@ -384,12 +404,31 @@ def add_expense():
 
 
 def get_finance_data(user_id):
-    # Mock data for illustration, replace with actual database queries
-    income_data = [{'date': '2024-01', 'amount': 3000}, {'date': '2024-02', 'amount': 3200}]
-    expense_data = [{'date': '2024-01', 'category': 'Food', 'amount': 500},
-                    {'date': '2024-01', 'category': 'Rent', 'amount': 1000},
-                    {'date': '2024-02', 'category': 'Transport', 'amount': 150}]
-    return income_data, expense_data
+    # Query to get income data for the user
+    income_query = f"""
+        SELECT pdate, amount 
+        FROM user_expenses 
+        WHERE user_id = {user_id} AND expense = 'earning'
+        ORDER BY pdate
+    """
+    income_data = execute_query("search", income_query)
+
+    # Format income data as required
+    income_data_formatted = [{'date': str(row[0]), 'amount': row[1]} for row in income_data]
+
+    # Query to get expense data for the user
+    expense_query = f"""
+        SELECT pdate, expense, amount, pdescription 
+        FROM user_expenses 
+        WHERE user_id = {user_id} AND expense = 'spend'
+        ORDER BY pdate
+    """
+    expense_data = execute_query("search", expense_query)
+
+    # Format expense data as required
+    expense_data_formatted = [{'date': str(row[0]), 'category': row[1], 'amount': row[2]} for row in expense_data]
+
+    return income_data_formatted, expense_data_formatted
 
 
 @app.route('/analysis')
@@ -397,44 +436,66 @@ def analysis():
     user_id = session.get('user_id')  # Fetch user id from session
     user_name = session.get('user_name')
 
-    # Get user finance data (income and expenses)
-    income_data, expense_data = get_finance_data(user_id)
+    # Fetch income and expense data for the user
+    try:
+        income_data, expense_data = get_finance_data(user_id)
 
-    # Calculate summary stats
-    total_income = sum([item['amount'] for item in income_data])
-    total_expenses = sum([item['amount'] for item in expense_data])
-    net_savings = total_income - total_expenses
-    goal_progress = (net_savings / total_income) * 100 if total_income > 0 else 0
+        # Ensure income_data and expense_data are valid before proceeding
+        if not income_data:
+            income_data = []
+        if not expense_data:
+            expense_data = []
 
-    # Create charts with Plotly
-    # Pie chart for Income vs. Expenses
-    pie_data = go.Figure(data=[go.Pie(labels=['Income', 'Expenses'],
-                                      values=[total_income, total_expenses])])
+        # Calculate summary statistics
+        total_income = sum([item['amount'] for item in income_data])
+        total_expenses = sum([item['amount'] for item in expense_data])
+        net_savings = total_income - total_expenses
+        goal_progress = (net_savings / total_income) * 100 if total_income > 0 else 0
 
-    # Stack bar chart for expenses by category
-    df_expense = pd.DataFrame(expense_data)
-    stack_bar = px.bar(df_expense, x='category', y='amount', color='category')
+        # Create Pie chart for Income vs. Expenses
+        pie_data = go.Figure(data=[go.Pie(labels=['Income', 'Expenses'],
+                                          values=[total_income, total_expenses],
+                                          hole=0.4)])  # Donut chart
 
-    # Line chart for income trends
-    df_income = pd.DataFrame(income_data)
-    line_graph = px.line(df_income, x='date', y='amount', title='Income Over Time')
+        # Stack bar chart for expenses by category
+        df_expense = pd.DataFrame(expense_data)
 
-    # Other charts (scatter, heatmap, etc.) would be similarly created here.
+        if not df_expense.empty and 'category' in df_expense.columns:
+            stack_bar = px.bar(df_expense, x='category', y='amount', color='category', title='Expenses by Category')
+            stack_bar_json = stack_bar.to_json()
+        else:
+            stack_bar_json = None  # Handle case where expense data is empty or doesn't have a 'category' column
 
-    # Pass data to template
-    return render_template('analysis.html',
-                           user_name=user_name,
-                           total_income=total_income,
-                           total_expenses=total_expenses,
-                           net_savings=net_savings,
-                           goal_progress=goal_progress,
-                           pie1=pie_data.to_json(),
-                           stack_bar=stack_bar.to_json(),
-                           line=line_graph.to_json(),
-                           scatter_graph={},  # Add scatter data
-                           heat_graph={},  # Add heatmap data
-                           month_graph={},  # Add monthly bar chart
-                           sun_graph={})  # Add sunburst data
+        # Line chart for income trends
+        df_income = pd.DataFrame(income_data)
+
+        if not df_income.empty and 'date' in df_income.columns:
+            line_graph = px.line(df_income, x='date', y='amount', title='Income Over Time')
+            line_graph_json = line_graph.to_json()
+        else:
+            line_graph_json = None  # Handle case where income data is empty or 'date' column is missing
+
+        # Convert Pie chart to JSON
+        pie_data_json = pie_data.to_json()
+
+        # Pass data to the template
+        return render_template('analysis.html',
+                               user_name=user_name,
+                               total_income=total_income,
+                               total_expenses=total_expenses,
+                               net_savings=net_savings,
+                               goal_progress=goal_progress,
+                               pie1=pie_data_json,
+                               stack_bar=stack_bar_json,
+                               line=line_graph_json)
+
+    except Exception as e:
+        print(f"Error during analysis: {e}")
+        print(traceback.format_exc())  # Print the full traceback
+        return "An error occurred during analysis", 500 # Handle any unexpected errors
+
+
+
 
 
 @app.route('/alerts', methods=['GET', 'POST'])
