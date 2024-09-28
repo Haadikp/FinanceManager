@@ -294,11 +294,10 @@ def home():
                 # Calculate total income and total expenses
                 total_income = df[df['Expense'] == 'Earning']['Amount'].sum()
                 total_expenses = df[df['Expense'] == 'Spend']['Amount'].sum()
-                savings = total_income - total_expenses
+                saving = total_income - total_expenses  # Update `saving`
                 # Validate that expenses are not greater than income
                 if total_expenses > total_income:
                     flash("Warning: Your total expenses exceed your total income!")
-
             except Exception as e:
                 # Handle errors in calculating top_tiles
                 flash(f"Error calculating financial data: {str(e)}")
@@ -315,26 +314,14 @@ def home():
         except:
             monthly_data = []
 
+        # Remove unused variables such as card_data and goals since they don't appear in your template
+        # Simplify pie chart handling for the three charts displayed in the template
         try:
-            card_data = support.sort_summary(df)
+            pie1 = support.makePieChart(df, 'Earning', 'Month_name')
+            pie2 = support.makePieChart(df, 'Spend', 'Day_name')
+            pie3 = support.makePieChart(df, 'Investment', 'Year')
         except:
-            card_data = []
-
-        try:
-            goals = support.expense_goal(df)
-        except:
-            goals = []
-
-        try:
-            size = 240
-            pie1 = support.makePieChart(df, 'Earning', 'Month_name', size=size)
-            pie2 = support.makePieChart(df, 'Spend', 'Day_name', size=size)
-            pie3 = support.makePieChart(df, 'Investment', 'Year', size=size)
-            pie4 = support.makePieChart(df, 'Saving', 'Note', size=size)
-            pie5 = support.makePieChart(df, 'Saving', 'Day_name', size=size)
-            pie6 = support.makePieChart(df, 'Investment', 'Note', size=size)
-        except:
-            pie1, pie2, pie3, pie4, pie5, pie6 = None, None, None, None, None, None
+            pie1, pie2, pie3 = None, None, None
 
         # Check and display user alerts
         alerts = check_alerts(session['user_id'])
@@ -342,30 +329,34 @@ def home():
             for alert in alerts:
                 flash(alert)
 
+        # Render template with updated variables
         return render_template('home.html',
                                user_name=userdata[0][1],
                                df_size=df.shape[0],
-                               df=json.dumps(df.to_json()),
                                earning=earning,
                                spend=spend,
                                invest=invest,
-                               saving=savings,
+                               saving=saving,
                                monthly_data=monthly_data,
-                               card_data=card_data,
-                               goals=goals,
                                table_data=table_data[0:5],
-                               bar=json.dumps(bar),
-                               line=json.dumps(line),
-                               stack_bar=json.dumps(stack_bar),
-                               pie1=json.dumps(pie1),
-                               pie2=json.dumps(pie2),
-                               pie3=json.dumps(pie3),
-                               pie4=json.dumps(pie4),
-                               pie5=json.dumps(pie5),
-                               pie6=json.dumps(pie6),
+                               bar_labels=json.dumps(bar['labels']) if bar else '[]',
+                               bar_income=json.dumps(bar['income']) if bar else '[]',
+                               bar_spend=json.dumps(bar['spend']) if bar else '[]',
+                               stacked_labels=json.dumps(stack_bar['labels']) if stack_bar else '[]',
+                               stacked_income=json.dumps(stack_bar['income']) if stack_bar else '[]',
+                               stacked_spend=json.dumps(stack_bar['spend']) if stack_bar else '[]',
+                               stacked_invest=json.dumps(stack_bar['invest']) if stack_bar else '[]',
+                               pie_labels1=json.dumps(pie1['labels']) if pie1 else '[]',
+                               pie_data1=json.dumps(pie1['data']) if pie1 else '[]',
+                               pie_labels2=json.dumps(pie2['labels']) if pie2 else '[]',
+                               pie_data2=json.dumps(pie2['data']) if pie2 else '[]',
+                               pie_labels3=json.dumps(pie3['labels']) if pie3 else '[]',
+                               pie_data3=json.dumps(pie3['data']) if pie3 else '[]',
                                )
+
     else:
         return redirect('/')
+
 
 
 @app.route('/home/add_expense', methods=['POST'])
