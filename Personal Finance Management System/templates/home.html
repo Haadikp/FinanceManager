@@ -15,347 +15,320 @@
         <title>Personal Finance Management System - Home</title>
     </head>
     <body class="page-bg">
-     <div class="bg-nav d-flex flex-column flex-md-row align-items-center pb-0 mb-0 border-bottom">
-      <h5 class="m-3 mr-md-auto font-weight-normal"><a href="/" style="text-decoration : none">Personal Finance Management System  - {{ user_name }}</a></h5>
+        <div class="bg-nav d-flex flex-column flex-md-row align-items-center pb-0 mb-0 border-bottom">
+            <h5 class="m-3 mr-md-auto font-weight-normal">
+                <a href="/" style="text-decoration : none">Personal Finance Management System - {{ user_name }}</a>
+            </h5>
 
-      <nav class="m-2 my-md-0 mr-md-3">
-        <a class="py-2 m-2 text-dark" href="/home">Home</a>
-        <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
-        <a class="py-2 m-2 text-dark" href="/profile">Profile</a>
-        <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
-        <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
-      </nav>
-         <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
-    </div>
-     <div>
-        {% for message in get_flashed_messages() %}
-         <div class="alert alert-warning alert-dismissible fade show" id="alert" role="alert">
-                    {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-            </button>
+            <nav class="m-2 my-md-0 mr-md-3">
+                <a class="py-2 m-2 text-dark" href="/home">Home</a>
+                <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
+                <a class="py-2 m-2 text-dark" href="/profile">Profile</a>
+                <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
+                <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
+            </nav>
+            <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
         </div>
-         {% endfor %}
-     </div>
+        <div>
+            {% for message in get_flashed_messages() %}
+            <div class="alert alert-warning alert-dismissible fade show" id="alert" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
 
-     <!-- Main container-->
-     <div class="container ">
-        <!-- Tiles row-->
-         <div class="row my-2 ">
-             <div class="col-md-3">
-                 <div class="card deep-purple my-1">
-                     <div class="card-body ">
-                         <h5 class="text-center">Total Income</h5>
-                         <h2 class="text-center">₹ {{ earning }}</h2>
-                     </div>
-                 </div>
-             </div>
-             <div class="col-md-3">
-                 <div class="card alive my-1">
-                     <div class="card-body ">
-                         <h5 class="text-center">Total Expense</h5>
-                         <h2 class="text-center">₹ {{ spend }}</h2>
-                     </div>
-                 </div>
-             </div>
-             <div class="col-md-3">
-                 <div class="card citrus my-1">
-                     <div class="card-body ">
-                         <h5 class="text-center">Total Investments</h5>
-                         <h2 class="text-center">₹ {{ invest }}</h2>
-                     </div>
-                 </div>
-             </div>
-             <div class="col-md-3">
-                 <div class="card green my-1">
-                     <div class="card-body ">
-                         <h5 class="text-center">Total Savings</h5>
-                         <h2 class="text-center">₹ {{ saving }}</h2>
-                     </div>
-                 </div>
-             </div>
-         </div>
-         <br>
+        <!-- Main container -->
+        <div class="container">
+            <!-- Tiles row -->
+            <div class="row my-2">
+                <div class="col-md-3">
+                    <div class="card deep-purple my-1">
+                        <div class="card-body">
+                            <h5 class="text-center">Total Income</h5>
+                            <h2 class="text-center">₹ {{ earning }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card alive my-1">
+                        <div class="card-body">
+                            <h5 class="text-center">Total Expense</h5>
+                            <h2 class="text-center">₹ {{ spend }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card citrus my-1">
+                        <div class="card-body">
+                            <h5 class="text-center">Total Investments</h5>
+                            <h2 class="text-center">₹ {{ invest }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card green my-1">
+                        <div class="card-body">
+                            <h5 class="text-center">Total Savings</h5>
+                            <h2 class="text-center">₹ {{ saving }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <br>
 
-<!--         Table records-->
-         <div  class="row mt-3">
-             <div class="col-md-8">
-                 <div class="row">
-                     <div class="col-md-4">
-                         <h4>Latest 5 Records</h4>
-                     </div>
-                     <div class="col-md-8 text-right">
-                        <button type="button" data-toggle="modal" data-target="#add_record" class="btn btn-primary btn-sm">Add New Record</button>
-                     </div>
+            <!-- Table records -->
+            <div class="row mt-3">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h4>Latest 5 Records</h4>
+                        </div>
+                        <div class="col-md-8 text-right">
+                            <button type="button" data-toggle="modal" data-target="#add_record" class="btn btn-primary btn-sm">Add New Record</button>
+                        </div>
 
-                     <!-- Add new record modal-->
-                     <div class="modal top fade mt-60" id="add_record" tabindex="-1" aria-labelledby="exampleModalLabel"
-                            aria-hidden="true" data-mdb-backdrop="true" data-mdb-keyboard="true">
-                        <div class="modal-dialog" style="width: 400px;">
-                            <div class="modal-content text-center">
-                                <div class="modal-header h5 text-white bg-success justify-content-center">
-                                    Add New  Expense Record
-                                </div>
-                                <div class="modal-body px-5">
-                                    <form class="form" method="post" action="/home/add_expense" >
-                                        <input type="date" class="form-control my-1" id="e_date" name="e_date" placeholder="Select Date" required>
-                                        <select class="form-control my-1" name="e_type" required>
-                                            <option selected hidden value="None">Transaction type...</option>
-                                            <option value="Earning">Income</option>
-                                            <option value="Spend">Expense</option>
-                                            <option value="Investment">Investment</option>
-                                            <!-- <option value="Saving">Saving</option> -->
-                                        </select>
-                                        <input type="number" class="form-control my-1" id="amount" name="amount" placeholder="Enter Amount" required>
-<!--                                        <select class="form-control my-1" name="notes" required>-->
-<!--                                            <option selected hidden value="None">Select...</option>-->
-<!--                                            <option value="Earning">Earning</option>-->
-<!--                                            <option value="Spend">Spend</option>-->
-<!--                                            <option value="Investment">Investment</option>-->
-<!--                                            <option value="Saving">Saving</option>-->
-<!--                                            <option value="Salary">Salary</option>-->
-<!--                                            <option value="Bonus">Bonus</option>-->
-<!--                                            <option value="Rental Income">Rental Income</option>-->
-<!--                                            <option value="Interest Income">Interest Income</option>-->
-<!--                                            <option value="Dividend Income">Dividend Income</option>-->
-<!--                                            <option value="Commission">Commission</option>-->
-<!--                                            <option value="Gifts">Gifts</option>-->
-<!--                                            <option value="House Rent">House Rent</option>-->
-<!--                                            <option value="Shopping">Shopping</option>-->
-<!--                                            <option value="Groceries">Groceries</option>-->
-<!--                                            <option value="Goods">Goods</option>-->
-<!--                                            <option value="Travel">Travel</option>-->
-<!--                                            <option value="Fuel">Fuel</option>-->
-<!--                                            <option value="EMI">EMI</option>-->
-<!--                                            <option value="Bills">Bills</option>-->
-<!--                                            <option value="Gifts">Gifts</option>-->
-<!--                                            <option value="Medical">Medical</option>-->
-<!--                                            <option value="Fees">Fees</option>-->
-<!--                                            <option value="Vacation">Vocation</option>-->
-<!--                                            <option value="Mutual Funds">Mutual Funds</option>-->
-<!--                                            <option value="Bonds">Bonds</option>-->
-<!--                                            <option value="ETF">ETF</option>-->
-<!--                                            <option value="Fixed Deposit">Fixed Deposit</option>-->
-<!--                                            <option value="Retirement Plan">Retirement Plan</option>-->
-<!--                                            <option value="Real Estate">Real Estate</option>-->
-<!--                                            <option value="Home Purchase">Home Purchase</option>-->
-<!--                                            <option value="Child Saving">Child Saving</option>-->
-<!--                                            <option value="Vacation">Vacation</option>-->
-<!--                                            <option value="Health Account">Health Account</option>-->
-<!--                                            <option value="Bank">Bank</option>-->
-                                            <!-- <option value="Others">Others</option> -->
-                                        </select>
-                                        <!-- OR allow user to add custom notes -->
-                                            <label for="custom_note"> add a custom note:</label>
+                        <!-- Add new record modal -->
+                        <div class="modal top fade mt-60" id="add_record" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-mdb-backdrop="true" data-mdb-keyboard="true">
+                            <div class="modal-dialog" style="width: 400px;">
+                                <div class="modal-content text-center">
+                                    <div class="modal-header h5 text-white bg-success justify-content-center">
+                                        Add New Expense Record
+                                    </div>
+                                    <div class="modal-body px-5">
+                                        <form class="form" method="post" action="/home/add_expense">
+                                            <input type="date" class="form-control my-1" id="e_date" name="e_date" placeholder="Select Date" required>
+                                            <select class="form-control my-1" name="e_type" required>
+                                                <option selected hidden value="None">Transaction type...</option>
+                                                <option value="Earning">Income</option>
+                                                <option value="Spend">Expense</option>
+                                                <option value="Investment">Investment</option>
+                                            </select>
+                                            <input type="number" class="form-control my-1" id="amount" name="amount" placeholder="Enter Amount" required>
+                                            <label for="custom_note">Add a custom note:</label>
                                             <input type="text" class="form-control my-1" id="custom_note" name="custom_note" placeholder="Enter your custom note">
-
-
-                                        <input type="submit" class="btn my-2 btn-primary btn-block" id="add" name="add" value="Submit">
-                                    </form>
+                                            <input type="submit" class="btn my-2 btn-primary btn-block" id="add" name="add" value="Submit">
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                     </div>
-                 </div>
-                 <div class="row">
-                     <div class="col-md-12">
-                         <table class="table table-dark">
-                          <thead>
-                            <tr>
-                              <th scope="col">#</th>
-                              <th scope="col">Date</th>
-                              <th scope="col">Expense</th>
-                              <th scope="col">Amount</th>
-                              <th scope="col">Note</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                          {% for row in table_data %}
-                            <tr>
-                              <th scope="row">{{ loop.index }}</th>
-                              <td>{{ row[2] }}</td>
-                              <td>{{ row[3] }}</td>
-                              <td>{{ row[4] }}</td>
-                              <td>{{ row[5] }}</td>
-                            </tr>
-                          {% endfor %}
-                          </tbody>
-                         </table>
-                     </div>
-                 </div>
-             </div>
-             {% if df_size==0 %}
-         <div>
-             <h3>No records found, seems you are a new user</h3>
-         </div>
-         {% else %}
+                    </div>
 
-            <!--  bar chart-->
-             <div class="col-md-4 chart_border">
-                    <div id="bar" class="chart"></div>
-             </div>
-         </div>
-         <br>
-         <br>
-         <div class="row ">
-             <div class="col-md-7 chart_border">
-                 <div id="stack" class="chart m-1"></div>
-             </div>
-              <div class="col-md-5">
-                  <div class="row m-1">
-                      <div class="col-sm-12">
-                          <div class="card card-body m-1 p-1 panel list">
-                              <h4 align="center">Monthly Record (₹)</h4>
-                              <li>
-                                  <h5 class="text-warning">Month</h5>
-                                  <span>Income</span>
-                                  <span>Spend</span>
-                                  <span>Invest</span>
-                                  <span>Saving</span>
-                              </li>
-
-                              {% for month in monthly_data %}
-                              <li>
-                                  <h6>{{ month['Month'] }}</h6>
-                                  <span>{{ month['Earning'] }}</span>
-                                  <span>{{ month['Spend'] }}</span>
-                                  <span>{{ month['Investment'] }}</span>
-                                  <span>{{ month['Saving'] }}</span>
-                              </li>
-                              {% endfor %}
-                          </div>
-                      </div>
-                  </div>
-              </div>
-         </div>
-
-         <br>
-         <br>
-
-         <div class="row">
-             <div class="sales">
-                 {% for data in card_data %}
-                 <div class="text-center">
-                    <h5 class="p-0 m-1">{{ data['head'] }}</h5>
-                    <h1>{{ data['main'] }}</h1>
-                    <small>{{ data['msg'] }}</small>
-                 </div>
-                 {% endfor %}
-             </div>
-         </div>
-         <br>
-         <br>
-
-         <div class="row">
-             <div class="col-md-4">
-                 <div class="goals">
-                     <h5>Monthly Goals <h6>(w.r.t. last month)</h6></h5>
-                     {% for goal in goals %}
-                        <div class="goal-panel goal">
-
-                                {% if goal['status']=='increased' %}
-                                    {% if goal['type']=='Spend' %}
-                            <span class="material-icons icon-color-down">
-                                            thumb_down
-                                    {% else %}
-                            <span class="material-icons icon-color-up">
-                                        thumb_up
-                                    {% endif %}
-                                {% else %}
-                                    {% if goal['type']=='Spend' %}
-                            <span class="material-icons icon-color-up">
-                                            thumb_up
-                                    {% else %}
-                            <span class="material-icons icon-color-down">
-                                        thumb_down
-                                    {% endif %}
-                                {% endif %}
-                            </span>
-                            <div>
-                               <div class="goal-title">
-                                    <h6>{{ goal['type'] }}</h6>
-                                    <h5>{{ goal['value'] }}</h5>
-                               </div>
-                                <small>{{ goal['status'] }} by {{ goal['percent'] }}% in this month.</small>
-                            </div>
+                    <!-- Table showing the latest records -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table table-dark">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Date</th>
+                                        <th scope="col">Expense</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col">Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in table_data %}
+                                    <tr>
+                                        <th scope="row">{{ loop.index }}</th>
+                                        <td>{{ row[2] }}</td>
+                                        <td>{{ row[3] }}</td>
+                                        <td>{{ row[4] }}</td>
+                                        <td>{{ row[5] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                     {% endfor %}
-                 </div>
-             </div>
-             <div class="col-md-8 goal-panel">
-                 <div class="row justify-content-center">
-                     <h3 class="text-center text-white align-center">Data in Pie Chart</h3>
-                 </div>
-                 <div class="row my-3">
-                     <div class="col-md-4 d-flex justify-content-around">
-                         <div id="pie11" class="chart"></div>
-                     </div>
-                     <div class="col-md-4 d-flex justify-content-around">
-                         <div id="pie22" class="chart"></div>
-                     </div>
-                     <div class="col-md-4 d-flex justify-content-around">
-                         <div id="pie55" class="chart"></div>
-                     </div>
-                 </div>
-                 <div class="row">
-                     <div class="col-md-4 d-flex justify-content-around">
-                         <div id="pie33" class="chart"></div>
-                     </div>
-                     <div class="col-md-4 d-flex justify-content-around">
-                         <div id="pie44" class="chart"></div>
-                     </div>
-                     <div class="col-md-4 d-flex justify-content-around">
-                         <div id="pie66" class="chart"></div>
-                     </div>
-                 </div>
-             </div>
-         </div>
+                    </div>
+                </div>
 
-         {% endif %}
-         <br>
-         <br>
-     </div>
+                {% if df_size == 0 %}
+                <div>
+                    <h3>No records found, seems you are a new user</h3>
+                </div>
+                {% else %}
 
-    <script type="text/javascript">
-        setTimeout(function () {
-                    // Closing the alert
-                    $('#alert').alert('close');
-                }, 3000);
-    </script>
+                <!-- Bar chart -->
+                <div class="col-md-4 chart_border">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-   <script src='https://cdn.plot.ly/plotly-latest.min.js'></script> <!-- Plotly CDN -->
+            <br>
+            <br>
+
+            <!-- Stacked bar chart -->
+            <div class="row">
+                <div class="col-md-7 chart_border">
+                    <canvas id="stackedBarChart"></canvas>
+                </div>
+                <div class="col-md-5">
+                    <div class="card card-body m-1 p-1 panel list">
+                        <h4 align="center">Monthly Record (₹)</h4>
+                        <li>
+                            <h5 class="text-warning">Month</h5>
+                            <span>Income</span>
+                            <span>Spend</span>
+                            <span>Invest</span>
+                            <span>Saving</span>
+                        </li>
+                        {% for month in monthly_data %}
+                        <li>
+                            <h6>{{ month['Month'] }}</h6>
+                            <span>{{ month['Earning'] }}</span>
+                            <span>{{ month['Spend'] }}</span>
+                            <span>{{ month['Investment'] }}</span>
+                            <span>{{ month['Saving'] }}</span>
+                        </li>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <br>
+            <br>
+
+            <!-- Pie charts -->
+            <div class="row">
+                <div class="col-md-4 d-flex justify-content-around">
+                    <canvas id="pieChart1"></canvas>
+                </div>
+                <div class="col-md-4 d-flex justify-content-around">
+                    <canvas id="pieChart2"></canvas>
+                </div>
+                <div class="col-md-4 d-flex justify-content-around">
+                    <canvas id="pieChart3"></canvas>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <br>
+        <br>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Designed by your team | 2024 &copy;</p>
+        </div>
+
+        <!-- JavaScript for Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            // Bar chart
+            var ctx = document.getElementById('barChart').getContext('2d');
+            var barChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: {{ bar_labels }},
+                    datasets: [{
+                        label: 'Income',
+                        data: {{ bar_income }},
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Spend',
+                        data: {{ bar_spend }},
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Stacked Bar chart
+            var ctx2 = document.getElementById('stackedBarChart').getContext('2d');
+            var stackedBarChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: {{ stacked_labels }},
+                    datasets: [{
+                        label: 'Income',
+                        data: {{ stacked_income }},
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                    }, {
+                        label: 'Spend',
+                        data: {{ stacked_spend }},
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                    }, {
+                        label: 'Investment',
+                        data: {{ stacked_invest }},
+                        backgroundColor: 'rgba(255, 206, 86, 0.7)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Pie charts
+            var pieData1 = {
+                labels: {{ pie_labels1 }},
+                datasets: [{
+                    data: {{ pie_data1 }},
+                    backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0']
+                }]
+            };
+            var pieData2 = {
+                labels: {{ pie_labels2 }},
+                datasets: [{
+                    data: {{ pie_data2 }},
+                    backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0']
+                }]
+            };
+            var pieData3 = {
+                labels: {{ pie_labels3 }},
+                datasets: [{
+                    data: {{ pie_data3 }},
+                    backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0']
+                }]
+            };
+
+            var ctx3 = document.getElementById('pieChart1').getContext('2d');
+            var ctx4 = document.getElementById('pieChart2').getContext('2d');
+            var ctx5 = document.getElementById('pieChart3').getContext('2d');
+
+            var pieChart1 = new Chart(ctx3, {
+                type: 'pie',
+                data: pieData1,
+                options: { responsive: true }
+            });
+            var pieChart2 = new Chart(ctx4, {
+                type: 'pie',
+                data: pieData2,
+                options: { responsive: true }
+            });
+            var pieChart3 = new Chart(ctx5, {
+                type: 'pie',
+                data: pieData3,
+                options: { responsive: true }
+            });
+        </script>
+
+        <!-- Bootstrap JS and dependencies -->
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-VoPFYnsL8u5zw9/CsmgMSVaaS4lSAWIvJI1DjPhzRnhkr0BLscPLyGDMd7ljbjmf" crossorigin="anonymous"></script>
     </body>
-
-    <script type='text/javascript'>
-          var bar_data = {{ bar | safe }};
-          Plotly.newPlot('bar', bar_data, {});
-
-          var stack_data = {{ stack_bar | safe }};
-          Plotly.newPlot('stack', stack_data, {});
-
-          var pie1_data = {{ pie1 | safe }};
-          Plotly.newPlot('pie11', pie1_data, {});
-
-          var pie2_data = {{ pie2 | safe }};
-          Plotly.newPlot('pie22', pie2_data, {});
-
-          var pie3_data = {{ pie3 | safe }};
-          Plotly.newPlot('pie33', pie3_data, {});
-
-          var pie4_data = {{ pie4 | safe }};
-          Plotly.newPlot('pie44', pie4_data, {});
-
-          var pie5_data = {{ pie5 | safe }};
-          Plotly.newPlot('pie55', pie5_data, {});
-
-          var pie6_data = {{ pie6 | safe }};
-          Plotly.newPlot('pie66', pie6_data, {});
-    </script>
-
 </html>

@@ -452,31 +452,46 @@ def analysis():
         net_savings = total_income - total_expenses
         goal_progress = (net_savings / total_income) * 100 if total_income > 0 else 0
 
-        # Create Pie chart for Income vs. Expenses
-        pie_data = go.Figure(data=[go.Pie(labels=['Income', 'Expenses'],
-                                          values=[total_income, total_expenses],
-                                          hole=0.4)])  # Donut chart
+        # Prepare data for Pie chart (Income vs Expenses)
+        pie_data = {
+            'labels': ['Income', 'Expenses'],
+            'datasets': [{
+                'data': [total_income, total_expenses],
+                'backgroundColor': ['#36A2EB', '#FF6384']
+            }]
+        }
 
-        # Stack bar chart for expenses by category
+        # Prepare data for Category-wise expenses (Bar chart)
         df_expense = pd.DataFrame(expense_data)
-
         if not df_expense.empty and 'category' in df_expense.columns:
-            stack_bar = px.bar(df_expense, x='category', y='amount', color='category', title='Expenses by Category')
-            stack_bar_json = stack_bar.to_json()
+            category_expenses = df_expense.groupby('category')['amount'].sum().reset_index()
+            stack_bar_data = {
+                'labels': category_expenses['category'].tolist(),
+                'datasets': [{
+                    'label': 'Expenses by Category',
+                    'data': category_expenses['amount'].tolist(),
+                    'backgroundColor': '#FF9F40'
+                }]
+            }
         else:
-            stack_bar_json = None  # Handle case where expense data is empty or doesn't have a 'category' column
+            stack_bar_data = None  # Handle case where expense data is empty or 'category' column is missing
 
-        # Line chart for income trends
+        # Prepare data for Income trends (Line chart)
         df_income = pd.DataFrame(income_data)
-
         if not df_income.empty and 'date' in df_income.columns:
-            line_graph = px.line(df_income, x='date', y='amount', title='Income Over Time')
-            line_graph_json = line_graph.to_json()
+            df_income['date'] = pd.to_datetime(df_income['date'])
+            df_income = df_income.sort_values('date')
+            line_graph_data = {
+                'labels': df_income['date'].dt.strftime('%Y-%m-%d').tolist(),
+                'datasets': [{
+                    'label': 'Income Over Time',
+                    'data': df_income['amount'].tolist(),
+                    'borderColor': '#4BC0C0',
+                    'fill': False
+                }]
+            }
         else:
-            line_graph_json = None  # Handle case where income data is empty or 'date' column is missing
-
-        # Convert Pie chart to JSON
-        pie_data_json = pie_data.to_json()
+            line_graph_data = None  # Handle case where income data is empty or 'date' column is missing
 
         # Pass data to the template
         return render_template('analysis.html',
@@ -485,14 +500,14 @@ def analysis():
                                total_expenses=total_expenses,
                                net_savings=net_savings,
                                goal_progress=goal_progress,
-                               pie1=pie_data_json,
-                               stack_bar=stack_bar_json,
-                               line=line_graph_json)
+                               pie_data=pie_data,
+                               stack_bar_data=stack_bar_data,
+                               line_graph_data=line_graph_data)
 
     except Exception as e:
         print(f"Error during analysis: {e}")
         print(traceback.format_exc())  # Print the full traceback
-        return "An error occurred during analysis", 500 # Handle any unexpected errors
+        return "An error occurred during analysis", 500
 
 
 
