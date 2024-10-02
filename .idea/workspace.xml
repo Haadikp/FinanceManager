@@ -4,9 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="Added tax calculation">
+    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="Updated tax calculation feature">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -177,7 +178,15 @@
       <option name="project" value="LOCAL" />
       <updated>1727876479641</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="Updated tax calculation feature">
+      <option name="closed" value="true" />
+      <created>1727884690918</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1727884690918</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -197,6 +206,7 @@
     <MESSAGE value="added graphical representation" />
     <MESSAGE value="added graphical representation to home page" />
     <MESSAGE value="Added tax calculation" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added tax calculation" />
+    <MESSAGE value="Updated tax calculation feature" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated tax calculation feature" />
   </component>
 </project>

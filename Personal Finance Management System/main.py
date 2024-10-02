@@ -395,31 +395,29 @@ def add_expense():
 
 
 def get_finance_data(user_id):
-    # Query to get income data for the user
-    income_query = f"""
-        SELECT pdate, amount 
+    # Query to get all data for the user
+    query = f"""
+        SELECT id, pdate, expense, amount, COALESCE(pdescription, '') 
         FROM user_expenses 
-        WHERE user_id = {user_id} AND expense = 'earning'
+        WHERE user_id = {user_id}
         ORDER BY pdate
     """
-    income_data = execute_query("search", income_query)
+    formatted_data = execute_query("search", query)
 
-    # Format income data as required
-    income_data_formatted = [{'date': str(row[0]), 'amount': row[1]} for row in income_data]
+    # Format data as required
+    formatted_data = [{
+        'date': str(row[1]),  # pdate
+        'expense': row[2],  # expense (either 'earning' or 'spend')
+        'amount': row[3],  # amount
+        'pdescription': row[4]  # pdescription
+    } for row in formatted_data]
 
-    # Query to get expense data for the user
-    expense_query = f"""
-        SELECT pdate, expense, amount, pdescription 
-        FROM user_expenses 
-        WHERE user_id = {user_id} AND expense = 'spend'
-        ORDER BY pdate
-    """
-    expense_data = execute_query("search", expense_query)
 
-    # Format expense data as required
-    expense_data_formatted = [{'date': str(row[0]), 'category': row[1], 'amount': row[2]} for row in expense_data]
+    # Split into income and expense data
+    income_data = [row for row in formatted_data if row['expense'] == 'Earning']
+    expense_data = [row for row in formatted_data if row['expense'] == 'Spend']
 
-    return income_data_formatted, expense_data_formatted
+    return income_data, expense_data
 
 
 @app.route('/analysis')
@@ -427,8 +425,8 @@ def analysis():
     user_id = session.get('user_id')  # Fetch user id from session
     user_name = session.get('user_name')
 
-    # Fetch income and expense data for the user
     try:
+        # Fetch income and expense data using the provided function
         income_data, expense_data = get_finance_data(user_id)
 
         # Ensure income_data and expense_data are valid before proceeding
@@ -452,23 +450,29 @@ def analysis():
             }]
         }
 
-        # Prepare data for Category-wise expenses (Bar chart)
+        # Prepare data for Expense by pdescription (Bar chart)
         df_expense = pd.DataFrame(expense_data)
-        if not df_expense.empty and 'category' in df_expense.columns:
-            category_expenses = df_expense.groupby('category')['amount'].sum().reset_index()
+
+        if not df_expense.empty and 'pdescription' in df_expense.columns:
+            # Group expenses by pdescription
+            pdescription_expenses = df_expense.groupby('pdescription')['amount'].sum().reset_index()
+
             stack_bar_data = {
-                'labels': category_expenses['category'].tolist(),
+                'labels': pdescription_expenses['pdescription'].tolist(),
                 'datasets': [{
                     'label': 'Expenses by Category',
-                    'data': category_expenses['amount'].tolist(),
+                    'data': pdescription_expenses['amount'].tolist(),
                     'backgroundColor': '#FF9F40'
                 }]
             }
         else:
-            stack_bar_data = None  # Handle case where expense data is empty or 'category' column is missing
+            stack_bar_data = None  # Handle case where expense data is empty or 'pdescription' column is missing
+
+
 
         # Prepare data for Income trends (Line chart)
         df_income = pd.DataFrame(income_data)
+
         if not df_income.empty and 'date' in df_income.columns:
             df_income['date'] = pd.to_datetime(df_income['date'])
             df_income = df_income.sort_values('date')
@@ -496,6 +500,7 @@ def analysis():
                                line_graph_data=line_graph_data)
 
     except Exception as e:
+        # Print error message for debugging
         print(f"Error during analysis: {e}")
         print(traceback.format_exc())  # Print the full traceback
         return "An error occurred during analysis", 500
