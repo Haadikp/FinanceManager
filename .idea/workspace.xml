@@ -4,14 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="added graphical representation to home page">
+    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="Added tax calculation">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/alerts.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/alerts.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/contact.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/contact.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/profile.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/profile.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,15 +32,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Python.main.executor": "Run",
-    "Python.support.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.support.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -174,7 +169,15 @@
       <option name="project" value="LOCAL" />
       <updated>1727545319036</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Added tax calculation">
+      <option name="closed" value="true" />
+      <created>1727876479641</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1727876479641</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -193,6 +196,7 @@
     <MESSAGE value="Updated css" />
     <MESSAGE value="added graphical representation" />
     <MESSAGE value="added graphical representation to home page" />
-    <option name="LAST_COMMIT_MESSAGE" value="added graphical representation to home page" />
+    <MESSAGE value="Added tax calculation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added tax calculation" />
   </component>
 </project>

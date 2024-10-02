@@ -595,26 +595,41 @@ def toggle_alert():
 def calculate_tax():
     if request.method == 'POST':
         # Get the user inputs from the form
-        total_income = float(request.form.get('total_income', 0))
-        total_expenses = float(request.form.get('total_expenses', 0))
+        total_income = float(request.form.get('income', 0))
+        total_expenses = float(request.form.get('expenses', 0))
+        tax_regime = request.form.get('regime', 'new')  # Get the selected regime (default is new)
 
         # Taxable income = total income - total expenses
         taxable_income = total_income - total_expenses
 
-        # Calculate tax based on the tax slabs
-        tax = calculate_tax_from_slabs(taxable_income)
+        # Calculate tax based on the selected regime
+        if tax_regime == 'new':
+            tax = calculate_new_regime_tax(taxable_income)
+        else:
+            tax = calculate_old_regime_tax(taxable_income)
+
+        # Calculate advance tax payments
+        advance_tax_june, advance_tax_sept, advance_tax_dec, advance_tax_march, remaining_tax_due = calculate_advance_tax(
+            tax)
 
         return render_template('tax_calculation.html',
                                total_income=total_income,
                                total_expenses=total_expenses,
                                taxable_income=taxable_income,
-                               tax=tax)
+                               total_tax=tax,
+                               tax=tax,
+                               regime=tax_regime.capitalize(),
+                               advance_tax_june=advance_tax_june,
+                               advance_tax_sept=advance_tax_sept,
+                               advance_tax_dec=advance_tax_dec,
+                               advance_tax_march=advance_tax_march,
+                               remaining_tax_due=remaining_tax_due)
     else:
         return render_template('tax_form.html')
 
 
-# Function to calculate tax based on slabs
-def calculate_tax_from_slabs(income):
+# Function to calculate tax under the new regime
+def calculate_new_regime_tax(income):
     tax = 0
     if income <= 250000:
         tax = 0
@@ -630,9 +645,42 @@ def calculate_tax_from_slabs(income):
         tax = (250000 * 0.05) + (250000 * 0.10) + (250000 * 0.15) + (250000 * 0.20) + ((income - 1250000) * 0.25)
     else:
         tax = (250000 * 0.05) + (250000 * 0.10) + (250000 * 0.15) + (250000 * 0.20) + (250000 * 0.25) + (
-                    (income - 1500000) * 0.30)
-
+                (income - 1500000) * 0.30)
     return tax
+
+
+# Function to calculate tax under the old regime
+def calculate_old_regime_tax(income):
+    tax = 0
+    if income <= 250000:
+        tax = 0
+    elif income <= 500000:
+        tax = (income - 250000) * 0.05
+    elif income <= 1000000:
+        tax = (250000 * 0.05) + ((income - 500000) * 0.20)
+    else:
+        tax = (250000 * 0.05) + (500000 * 0.20) + ((income - 1000000) * 0.30)
+    return tax
+
+
+# Function to calculate advance tax payments
+def calculate_advance_tax(total_tax):
+    # 15% of the total tax due by June 15
+    advance_tax_june = total_tax * 0.15
+
+    # Additional 30% due by September 15 (making it 45% total including June)
+    advance_tax_sept = (total_tax * 0.45) - advance_tax_june
+
+    # Additional 30% due by December 15 (making it 75% total including previous payments)
+    advance_tax_dec = (total_tax * 0.75) - (advance_tax_june + advance_tax_sept)
+
+    # Remaining 25% due by March 15 (making it 100% total)
+    advance_tax_march = total_tax - (advance_tax_june + advance_tax_sept + advance_tax_dec)
+
+    # Remaining tax due after March (should ideally be zero)
+    remaining_tax_due = total_tax - (advance_tax_june + advance_tax_sept + advance_tax_dec + advance_tax_march)
+
+    return advance_tax_june, advance_tax_sept, advance_tax_dec, advance_tax_march, remaining_tax_due
 
 
 @app.route('/profile')
