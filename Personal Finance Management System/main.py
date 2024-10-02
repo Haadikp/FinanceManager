@@ -137,6 +137,7 @@ app.config['MAIL_PASSWORD'] = 'voxo isgt wxoi sqeb'
 app.config['MAIL_DEBUG'] = True
 mail = Mail(app)
 
+
 # Password reset route using OTP
 @app.route('/reset', methods=['POST'])
 def reset():
@@ -358,7 +359,6 @@ def home():
         return redirect('/')
 
 
-
 @app.route('/home/add_expense', methods=['POST'])
 def add_expense():
     if 'user_id' in session:
@@ -501,9 +501,6 @@ def analysis():
         return "An error occurred during analysis", 500
 
 
-
-
-
 @app.route('/alerts', methods=['GET', 'POST'])
 def alerts():
     if 'user_id' not in session:
@@ -592,6 +589,50 @@ def toggle_alert():
         flash(f"An error occurred: {e}")
 
     return redirect('/alerts')
+
+
+@app.route('/calculate_tax', methods=['GET', 'POST'])
+def calculate_tax():
+    if request.method == 'POST':
+        # Get the user inputs from the form
+        total_income = float(request.form.get('total_income', 0))
+        total_expenses = float(request.form.get('total_expenses', 0))
+
+        # Taxable income = total income - total expenses
+        taxable_income = total_income - total_expenses
+
+        # Calculate tax based on the tax slabs
+        tax = calculate_tax_from_slabs(taxable_income)
+
+        return render_template('tax_calculation.html',
+                               total_income=total_income,
+                               total_expenses=total_expenses,
+                               taxable_income=taxable_income,
+                               tax=tax)
+    else:
+        return render_template('tax_form.html')
+
+
+# Function to calculate tax based on slabs
+def calculate_tax_from_slabs(income):
+    tax = 0
+    if income <= 250000:
+        tax = 0
+    elif income <= 500000:
+        tax = (income - 250000) * 0.05
+    elif income <= 750000:
+        tax = (250000 * 0.05) + ((income - 500000) * 0.10)
+    elif income <= 1000000:
+        tax = (250000 * 0.05) + (250000 * 0.10) + ((income - 750000) * 0.15)
+    elif income <= 1250000:
+        tax = (250000 * 0.05) + (250000 * 0.10) + (250000 * 0.15) + ((income - 1000000) * 0.20)
+    elif income <= 1500000:
+        tax = (250000 * 0.05) + (250000 * 0.10) + (250000 * 0.15) + (250000 * 0.20) + ((income - 1250000) * 0.25)
+    else:
+        tax = (250000 * 0.05) + (250000 * 0.10) + (250000 * 0.15) + (250000 * 0.20) + (250000 * 0.25) + (
+                    (income - 1500000) * 0.30)
+
+    return tax
 
 
 @app.route('/profile')

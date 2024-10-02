@@ -14,24 +14,27 @@
 </head>
 <body class="page-bg">
 
-    <div class="bg-nav d-flex flex-column flex-md-row align-items-center pb-0 mb-0 border-bottom">
-        <h5 class="m-3 mr-md-auto font-weight-normal">Personal Finance Management System</h5>
+    <!-- Navbar -->
+    <nav class="navbar bg-nav">
+        <a href="/" class="navbar-brand text-light">Personal Finance Management System</a>
         <nav class="m-2 my-md-0 mr-md-3">
             <a class="py-2 m-2 text-dark" href="/home">Home</a>
-            <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
+<!--            <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>-->
             <a class="py-2 m-2 text-dark" href="/profile">Profile</a>
             <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
+            <a class="py-2 m-2 text-dark" href="/calculate_tax">Calculate tax</a>
+            <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
             <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
         </nav>
-    </div>
+    </nav>
 
     <div class="container mt-4">
         <div class="card shadow-sm mb-4">
             <div class="card-body text-center">
                 <h3>Financial Summary</h3>
-                <p>Total Income: {{ total_income }}</p>
-                <p>Total Expenses: {{ total_expenses }}</p>
-                <p>Net Savings: {{ net_savings }}</p>
+                <p>Total Income: ₹{{ total_income }}</p>
+                <p>Total Expenses: ₹{{ total_expenses }}</p>
+                <p>Net Savings: ₹{{ net_savings }}</p>
                 <p>Goal Progress: {{ goal_progress }}%</p>
             </div>
         </div>
@@ -76,32 +79,33 @@
     </div>
 
     <script>
-    // Income vs Expenses Pie Chart
-    var pieCtx = document.getElementById('incomeExpenseChart').getContext('2d');
-    new Chart(pieCtx, {
-        type: 'pie',
-        data: {{ pie_data | tojson }},
-    });
-
-    // Category-Wise Spending Bar Chart
-    var barCtx = document.getElementById('categorySpendingChart').getContext('2d');
-    if ({{ stack_bar_data | tojson | safe }} !== null) {
-        new Chart(barCtx, {
-            type: 'bar',
-            data: {{ stack_bar_data | tojson }},
+        // Income vs Expenses Pie Chart
+        var pieCtx = document.getElementById('incomeExpenseChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {{ pie_data | tojson }},
         });
-    }
 
-    // Income Trend Line Chart
-    var lineCtx = document.getElementById('incomeTrendChart').getContext('2d');
-    if ({{ line_graph_data | tojson | safe }} !== null) {
-        new Chart(lineCtx, {
-            type: 'line',
-            data: {{ line_graph_data | tojson }},
-        });
-    }
-</script>
+        // Category-Wise Spending Bar Chart
+        var barCtx = document.getElementById('categorySpendingChart').getContext('2d');
+        if ({{ stack_bar_data | tojson | safe }} !== null) {
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {{ stack_bar_data | tojson }},
+            });
+        }
 
+        // Income Trend Line Chart
+        var lineCtx = document.getElementById('incomeTrendChart').getContext('2d');
+        if ({{ line_graph_data | tojson | safe }} !== null) {
+            new Chart(lineCtx, {
+                type: 'line',
+                data: {{ line_graph_data | tojson }},
+            });
+        }
+    </script>
 
+    <!-- Optional Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>

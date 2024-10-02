@@ -4,14 +4,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="added graphical representation">
+    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="added graphical representation to home page">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/alerts.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/alerts.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/contact.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/contact.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/profile.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/profile.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -25,14 +37,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.support.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "Python.main.executor": "Run",
+    "Python.support.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master"
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -153,7 +166,15 @@
       <option name="project" value="LOCAL" />
       <updated>1727543824551</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="added graphical representation to home page">
+      <option name="closed" value="true" />
+      <created>1727545319036</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1727545319036</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -171,6 +192,7 @@
     <MESSAGE value="Updated analysis feature" />
     <MESSAGE value="Updated css" />
     <MESSAGE value="added graphical representation" />
-    <option name="LAST_COMMIT_MESSAGE" value="added graphical representation" />
+    <MESSAGE value="added graphical representation to home page" />
+    <option name="LAST_COMMIT_MESSAGE" value="added graphical representation to home page" />
   </component>
 </project>
