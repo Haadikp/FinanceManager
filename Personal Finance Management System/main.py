@@ -468,14 +468,13 @@ def analysis():
         else:
             stack_bar_data = None  # Handle case where expense data is empty or 'pdescription' column is missing
 
-
-
         # Prepare data for Income trends (Line chart)
         df_income = pd.DataFrame(income_data)
 
         if not df_income.empty and 'date' in df_income.columns:
             df_income['date'] = pd.to_datetime(df_income['date'])
             df_income = df_income.sort_values('date')
+            print(df_income['amount'])
             line_graph_data = {
                 'labels': df_income['date'].dt.strftime('%Y-%m-%d').tolist(),
                 'datasets': [{
@@ -488,6 +487,56 @@ def analysis():
         else:
             line_graph_data = None  # Handle case where income data is empty or 'date' column is missing
 
+        # Prepare data for Expense trends (Line chart)
+        if not df_expense.empty and 'date' in df_expense.columns:
+            df_expense['date'] = pd.to_datetime(df_expense['date'])
+            df_expense = df_expense.sort_values('date')
+
+            # Prepare the expense trend data for the chart
+            expense_trend_data = {
+                'labels': df_expense['date'].dt.strftime('%Y-%m-%d').tolist(),  # Format date for display
+                'datasets': [{
+                    'label': 'Expenses Over Time',
+                    'data': df_expense['amount'].tolist(),
+                    'borderColor': '#FF6384',  # Color for the expense line
+                    'fill': False  # Disable filling below the line
+                }]
+            }
+        else:
+            expense_trend_data = None  # Handle case where expense data is empty or 'date' column is missing
+
+        # Prepare data for Income vs Expenses Scatter Plot
+        if not df_income.empty and not df_expense.empty:
+            # Merge income and expense data by date
+            df_combined = pd.merge(df_income[['date', 'amount']], df_expense[['date', 'amount']],
+                                   on='date', how='outer', suffixes=('_income', '_expense'))
+            df_combined = df_combined.fillna(0)  # Fill NaN with 0 for missing dates
+
+            # Prepare the scatter plot data
+            scatter_plot_data = {
+                'labels': df_combined['date'].dt.strftime('%Y-%m-%d').tolist(),  # Format date for display
+                'datasets': [
+                    {
+                        'label': 'Income',  # Income scatter points
+                        'data': df_combined['amount_income'].tolist(),
+                        'borderColor': '#4BC0C0',  # Color for the income points
+                        'showLine': True,  # Show line connecting the points
+                        'fill': False,
+                        'pointBackgroundColor': '#36A2EB'  # Color for the points
+                    },
+                    {
+                        'label': 'Expenses',  # Expense scatter points
+                        'data': df_combined['amount_expense'].tolist(),
+                        'borderColor': '#FF6384',  # Color for the expense points
+                        'showLine': True,  # Show line connecting the points
+                        'fill': False,
+                        'pointBackgroundColor': '#FF6384'  # Color for the points
+                    }
+                ]
+            }
+        else:
+            scatter_plot_data = None  # Handle case where either income or expense data is missing
+
         # Pass data to the template
         return render_template('analysis.html',
                                user_name=user_name,
@@ -497,7 +546,10 @@ def analysis():
                                goal_progress=goal_progress,
                                pie_data=pie_data,
                                stack_bar_data=stack_bar_data,
-                               line_graph_data=line_graph_data)
+                               line_graph_data=line_graph_data,  # Income trends
+                               expense_trend_data=expense_trend_data,  # Expense trends
+                               scatter_plot_data=scatter_plot_data)  # Income vs Expenses comparison
+
 
     except Exception as e:
         # Print error message for debugging
