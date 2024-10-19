@@ -32,7 +32,7 @@
         </div>
         <div>
             {% for message in get_flashed_messages() %}
-            <div class="alert alert-warning alert-dismissible fade show" id="alert" role="alert">
+            <div class="alert alert-danger alert-dismissible fade show" id="alert" role="alert">
                 {{ message }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -155,51 +155,63 @@
                 {% else %}
 
                 <!-- Bar chart -->
-                <div class="col-md-4 chart_border">
-                    <canvas id="barChart"></canvas>
-                </div>
+<!--                <div class="col-md-4 chart_border">-->
+<!--                    <canvas id="barChart"></canvas>-->
+<!--                </div>-->
+            </div>
+
             </div>
 
             <br>
             <br>
 
             <!-- Stacked bar chart -->
-            <div class="row">
-                <div class="col-md-7 chart_border">
-                    <canvas id="stackedBarChart"></canvas>
-                </div>
+
+<!--                <div class="col-md-7 chart_border">-->
+<!--                    <canvas id="stackedBarChart"></canvas>-->
+<!--                </div>-->
                 <div class="col-md-5">
-                    <div class="card card-body m-1 p-1 panel list">
-                        <h4 align="center">Monthly Record (₹)</h4>
-                        <li>
-                            <h5 class="text-warning">Month</h5>
-                            <span>Income</span>
-                            <span>Spend</span>
-                            <span>Invest</span>
-                            <span>Saving</span>
-                        </li>
-                        {% for month in monthly_data %}
-                        <li>
-                            <h6>{{ month['Month'] }}</h6>
-                            <span>{{ month['Earning'] }}</span>
-                            <span>{{ month['Spend'] }}</span>
-                            <span>{{ month['Investment'] }}</span>
-                            <span>{{ month['Saving'] }}</span>
-                        </li>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
+    <div class="card card-body m-1 p-1 panel list">
+        <h4 align="center">Monthly Record (₹)</h4>
+        <ul class="list-unstyled">
+            <li class="d-flex justify-content-between">
+                <h5 class="text-warning">Month</h5>
+                <span>Income</span>
+                <span>Spend</span>
+                <span>Invest</span>
+                <span>Saving</span>
+            </li>
+            {% for month in monthly_data %}
+            <li class="d-flex justify-content-between">
+                <h6>{{ month['Month'] }}</h6>
+                <span>{{ month['Earning'] }}</span>
+                <span>{{ month['Spend'] }}</span>
+                <span>{{ month['Investment'] }}</span>
+                <span>{{ month['Saving'] }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
 
             <br>
             <br>
 
             <!-- Pie charts -->
-            <div class="row my-3">
-                <div class="col-md-6 chart_border">
+            <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm text-center">
+                    <h5>Category-Wise Spending</h5>
+                    <div class="card-body chart-container">
                     <canvas id="pieChart1"></canvas>
                 </div>
-                <div class="col-md-6 chart_border">
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm text-center">
+                    <h5>Category-Wise Earnings</h5>
+                    <div class="card-body chart-container">
                     <canvas id="pieChart2"></canvas>
                 </div>
             </div>

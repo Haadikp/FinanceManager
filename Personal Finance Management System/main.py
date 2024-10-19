@@ -288,6 +288,7 @@ def home():
 
         df = support.generate_df(df)
 
+
         # Initialize earnings, spend, invest, and savings
         earning, spend, invest, saving = 0, 0, 0, 0
 
