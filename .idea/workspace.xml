@@ -4,15 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="Updated Analysis page">
+    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="Updated pdf download feature">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/static/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/static/css/style.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/contact.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/contact.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/login.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/register.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/register.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -236,7 +231,23 @@
       <option name="project" value="LOCAL" />
       <updated>1729096812326</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Added download as pdf option">
+      <option name="closed" value="true" />
+      <created>1729359725258</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1729359725258</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Updated pdf download feature">
+      <option name="closed" value="true" />
+      <created>1729360095103</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1729360095103</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -258,6 +269,8 @@
     <MESSAGE value="Added tax calculation" />
     <MESSAGE value="Updated tax calculation feature" />
     <MESSAGE value="Updated Analysis page" />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated Analysis page" />
+    <MESSAGE value="Added download as pdf option" />
+    <MESSAGE value="Updated pdf download feature" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated pdf download feature" />
   </component>
 </project>

@@ -308,19 +308,6 @@ def home():
                 flash(f"Error calculating financial data: {str(e)}")
                 earning, spend, invest, saving = 0, 0, 0, 0
 
-        # Prepare data for Chart.js (Income and Expenses over Time)
-        try:
-            df['pdate'] = pd.to_datetime(df['Date'])
-            df.sort_values('pdate', inplace=True)
-
-            # Group data by date for income and expenses
-            income_over_time = df[df['Expense'] == 'Earning'].groupby('pdate')['Amount'].sum().tolist()
-            expenses_over_time = df[df['Expense'] == 'Spend'].groupby('pdate')['Amount'].sum().tolist()
-            dates = df['pdate'].dt.strftime('%Y-%m-%d').unique().tolist()
-        except Exception as e:
-            flash(f"Error processing data for charts: {str(e)}")
-            income_over_time, expenses_over_time, dates = [], [], []
-
         # Prepare data for category-wise pie charts (Spending and Earning)
         try:
             # Spending category pie chart
@@ -369,11 +356,11 @@ def home():
                                invest=invest,
                                saving=saving,
                                table_data=table_data[0:5],  # Display first 5 records
-                               income_over_time=income_over_time,
-                               expenses_over_time=expenses_over_time,
-                               dates=dates,
-                               spending_pie_data=spending_pie_data,
-                               earning_pie_data=earning_pie_data)
+                               # income_over_time=income_over_time,
+                               # expenses_over_time=expenses_over_time,
+                               # dates=dates,
+                               pie_data1=spending_pie_data,
+                               pie_data2=earning_pie_data)
     else:
         return redirect('/')
 
