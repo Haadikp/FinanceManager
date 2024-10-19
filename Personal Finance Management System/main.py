@@ -6,7 +6,6 @@ import traceback
 import warnings
 from datetime import datetime
 from datetime import timedelta
-
 import bcrypt
 import pandas as pd
 import pdfkit
