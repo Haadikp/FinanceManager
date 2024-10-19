@@ -12,7 +12,7 @@
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     <title>Personal Finance Management System - Login</title>
   </head>
-  <body class="page-bg">
+  <body class="login-page">
 <!--  Creating navbar-->
     <nav class="navbar bg-nav">
         <a href="" class="navbar-brand text-light">Personal Finance Management System</a>
@@ -21,7 +21,9 @@
     <div class="container">
       <div class="row">
         <div class="col-md-8">
-          <h1 class="text-light display-4 mt-50" style="font-size:70px">Take charge of your finances with advanced expense tracking and visualization capabilities</h1>
+<!--            <h1 class="display-4 mt-50" style="font-size:70px; color:black;">-->
+<!--                Take charge of your finances with advanced expense tracking and visualization capabilities-->
+<!--            </h1>-->
         </div>
         <div class="col-md-4">
             {% for message in get_flashed_messages() %}
@@ -32,14 +34,14 @@
                     </button>
                 </div>
             {% endfor %}
-          <div class="card mt-50">
-            <div class="card-body">
+          <div class="login-card">
+            <div >
               <form class="form" method="post" action="/login_validation">
                 <label>Email</label><br>
                 <input type="email" class="form-control" name="email" placeholder="Enter your registered email" required><br>
                 <label>Password</label><br>
                 <input type="password" class="form-control" name="password" placeholder="Enter your password" required><br><br>
-                <input type="submit" class="btn btn-primary btn-block btn-lg" value="Login">
+                  <button type="submit" class="btn btn-primary btn-block btn-lg" value="Login">Login</button>
               </form>
 
               <!-- Reset Password -->

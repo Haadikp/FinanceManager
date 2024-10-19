@@ -1,19 +1,22 @@
-import bcrypt
-from flask import Flask, render_template, request, url_for, redirect, session, flash, jsonify
+import math
 import os
-from datetime import timedelta
-import pandas as pd
-import json
-import warnings
-import pymysql
-import support
-import re
-from datetime import datetime
-from flask_mail import Mail, Message
 import random
-import plotly.express as px
-import plotly.graph_objs as go
+import re
 import traceback
+import warnings
+from datetime import datetime
+from datetime import timedelta
+
+import bcrypt
+import pandas as pd
+import pdfkit
+import pymysql
+from flask import Flask, render_template, make_response
+from flask import request, redirect, flash
+from flask import session
+from flask_mail import Mail, Message
+
+import support
 
 warnings.filterwarnings("ignore")
 
@@ -275,9 +278,11 @@ def feedback():
 @app.route('/home')
 def home():
     if 'user_id' in session:
+        # Fetch user data
         query = f"SELECT * FROM user_login WHERE user_id = {session['user_id']}"
         userdata = execute_query("search", query)
 
+        # Fetch user expenses and create dataframe
         table_query = f"SELECT * FROM user_expenses WHERE user_id = {session['user_id']} ORDER BY pdate DESC"
         table_data = execute_query("search", table_query)
         df = pd.DataFrame(table_data, columns=['#', 'User_Id', 'Date', 'Expense', 'Amount', 'Note'])
@@ -287,42 +292,69 @@ def home():
         # Initialize earnings, spend, invest, and savings
         earning, spend, invest, saving = 0, 0, 0, 0
 
-        # Check for income and expense data to handle empty DataFrame gracefully
         if not df.empty:
             try:
+                # Calculate earnings, spend, invest, and savings using helper function
                 earning, spend, invest, saving = support.top_tiles(df)
 
                 # Calculate total income and total expenses
                 total_income = df[df['Expense'] == 'Earning']['Amount'].sum()
                 total_expenses = df[df['Expense'] == 'Spend']['Amount'].sum()
-                saving = total_income - total_expenses  # Update `saving`
-                # Validate that expenses are not greater than income
+                saving = total_income - total_expenses
+
+                # Flash a warning if expenses exceed income
                 if total_expenses > total_income:
                     flash("Warning: Your total expenses exceed your total income!")
             except Exception as e:
-                # Handle errors in calculating top_tiles
                 flash(f"Error calculating financial data: {str(e)}")
                 earning, spend, invest, saving = 0, 0, 0, 0
 
-        # Proceed with generating graphs and other statistics
+        # Prepare data for Chart.js (Income and Expenses over Time)
         try:
-            bar, pie, line, stack_bar = support.generate_Graph(df)
-        except:
-            bar, pie, line, stack_bar = None, None, None, None
+            df['pdate'] = pd.to_datetime(df['Date'])
+            df.sort_values('pdate', inplace=True)
 
-        try:
-            monthly_data = support.get_monthly_data(df, res=None)
-        except:
-            monthly_data = []
+            # Group data by date for income and expenses
+            income_over_time = df[df['Expense'] == 'Earning'].groupby('pdate')['Amount'].sum().tolist()
+            expenses_over_time = df[df['Expense'] == 'Spend'].groupby('pdate')['Amount'].sum().tolist()
+            dates = df['pdate'].dt.strftime('%Y-%m-%d').unique().tolist()
+        except Exception as e:
+            flash(f"Error processing data for charts: {str(e)}")
+            income_over_time, expenses_over_time, dates = [], [], []
 
-        # Remove unused variables such as card_data and goals since they don't appear in your template
-        # Simplify pie chart handling for the three charts displayed in the template
+        # Prepare data for category-wise pie charts (Spending and Earning)
         try:
-            pie1 = support.makePieChart(df, 'Earning', 'Month_name')
-            pie2 = support.makePieChart(df, 'Spend', 'Day_name')
-            pie3 = support.makePieChart(df, 'Investment', 'Year')
-        except:
-            pie1, pie2, pie3 = None, None, None
+            # Spending category pie chart
+            df_spending = df[df['Expense'] == 'Spend']
+            if not df_spending.empty and 'Note' in df_spending.columns:
+                spending_category_data = df_spending.groupby('Note')['Amount'].sum().reset_index()
+                spending_pie_data = {
+                    'labels': spending_category_data['Note'].tolist(),
+                    'datasets': [{
+                        'data': spending_category_data['Amount'].tolist(),
+                        'backgroundColor': ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                    }]
+                }
+            else:
+                spending_pie_data = None
+
+            # Earning category pie chart
+            df_earning = df[df['Expense'] == 'Earning']
+            if not df_earning.empty and 'Note' in df_earning.columns:
+                earning_category_data = df_earning.groupby('Note')['Amount'].sum().reset_index()
+                earning_pie_data = {
+                    'labels': earning_category_data['Note'].tolist(),
+                    'datasets': [{
+                        'data': earning_category_data['Amount'].tolist(),
+                        'backgroundColor': ['#36A2EB', '#FFCE56', '#FF6384', '#4BC0C0', '#9966FF']
+                    }]
+                }
+            else:
+                earning_pie_data = None
+
+        except Exception as e:
+            flash(f"Error processing data for pie charts: {str(e)}")
+            spending_pie_data, earning_pie_data = None, None
 
         # Check and display user alerts
         alerts = check_alerts(session['user_id'])
@@ -330,31 +362,19 @@ def home():
             for alert in alerts:
                 flash(alert)
 
-        # Render template with updated variables
+        # Render home.html with the required data
         return render_template('home.html',
                                user_name=userdata[0][1],
-                               df_size=df.shape[0],
                                earning=earning,
                                spend=spend,
                                invest=invest,
                                saving=saving,
-                               monthly_data=monthly_data,
-                               table_data=table_data[0:5],
-                               bar_labels=json.dumps(bar['labels']) if bar else '[]',
-                               bar_income=json.dumps(bar['income']) if bar else '[]',
-                               bar_spend=json.dumps(bar['spend']) if bar else '[]',
-                               stacked_labels=json.dumps(stack_bar['labels']) if stack_bar else '[]',
-                               stacked_income=json.dumps(stack_bar['income']) if stack_bar else '[]',
-                               stacked_spend=json.dumps(stack_bar['spend']) if stack_bar else '[]',
-                               stacked_invest=json.dumps(stack_bar['invest']) if stack_bar else '[]',
-                               pie_labels1=json.dumps(pie1['labels']) if pie1 else '[]',
-                               pie_data1=json.dumps(pie1['data']) if pie1 else '[]',
-                               pie_labels2=json.dumps(pie2['labels']) if pie2 else '[]',
-                               pie_data2=json.dumps(pie2['data']) if pie2 else '[]',
-                               pie_labels3=json.dumps(pie3['labels']) if pie3 else '[]',
-                               pie_data3=json.dumps(pie3['data']) if pie3 else '[]',
-                               )
-
+                               table_data=table_data[0:5],  # Display first 5 records
+                               income_over_time=income_over_time,
+                               expenses_over_time=expenses_over_time,
+                               dates=dates,
+                               spending_pie_data=spending_pie_data,
+                               earning_pie_data=earning_pie_data)
     else:
         return redirect('/')
 
@@ -412,7 +432,6 @@ def get_finance_data(user_id):
         'pdescription': row[4]  # pdescription
     } for row in formatted_data]
 
-
     # Split into income and expense data
     income_data = [row for row in formatted_data if row['expense'] == 'Earning']
     expense_data = [row for row in formatted_data if row['expense'] == 'Spend']
@@ -420,28 +439,23 @@ def get_finance_data(user_id):
     return income_data, expense_data
 
 
-@app.route('/analysis')
-def analysis():
-    user_id = session.get('user_id')  # Fetch user id from session
+@app.route('/analysis', defaults={'page': 1})
+@app.route('/analysis/page/<int:page>')
+def analysis(page):  # Add the page parameter here
+    user_id = session.get('user_id')
     user_name = session.get('user_name')
+    items_per_page = 10  # Number of items to display per page
 
     try:
         # Fetch income and expense data using the provided function
         income_data, expense_data = get_finance_data(user_id)
 
-        # Ensure income_data and expense_data are valid before proceeding
-        if not income_data:
-            income_data = []
-        if not expense_data:
-            expense_data = []
-
-        # Calculate summary statistics
         total_income = sum([item['amount'] for item in income_data])
         total_expenses = sum([item['amount'] for item in expense_data])
         net_savings = total_income - total_expenses
         goal_progress = (net_savings / total_income) * 100 if total_income > 0 else 0
 
-        # Prepare data for Pie chart (Income vs Expenses)
+        # Prepare pie chart data for Income vs Expenses
         pie_data = {
             'labels': ['Income', 'Expenses'],
             'datasets': [{
@@ -450,13 +464,10 @@ def analysis():
             }]
         }
 
-        # Prepare data for Expense by pdescription (Bar chart)
+        # Prepare data for stack bar chart (expenses by category)
         df_expense = pd.DataFrame(expense_data)
-
         if not df_expense.empty and 'pdescription' in df_expense.columns:
-            # Group expenses by pdescription
             pdescription_expenses = df_expense.groupby('pdescription')['amount'].sum().reset_index()
-
             stack_bar_data = {
                 'labels': pdescription_expenses['pdescription'].tolist(),
                 'datasets': [{
@@ -466,15 +477,13 @@ def analysis():
                 }]
             }
         else:
-            stack_bar_data = None  # Handle case where expense data is empty or 'pdescription' column is missing
+            stack_bar_data = None
 
-        # Prepare data for Income trends (Line chart)
+        # Prepare income trend line chart data
         df_income = pd.DataFrame(income_data)
-
         if not df_income.empty and 'date' in df_income.columns:
             df_income['date'] = pd.to_datetime(df_income['date'])
             df_income = df_income.sort_values('date')
-            print(df_income['amount'])
             line_graph_data = {
                 'labels': df_income['date'].dt.strftime('%Y-%m-%d').tolist(),
                 'datasets': [{
@@ -485,59 +494,31 @@ def analysis():
                 }]
             }
         else:
-            line_graph_data = None  # Handle case where income data is empty or 'date' column is missing
+            line_graph_data = None
 
-        # Prepare data for Expense trends (Line chart)
+        # Prepare expense trend line chart data
         if not df_expense.empty and 'date' in df_expense.columns:
             df_expense['date'] = pd.to_datetime(df_expense['date'])
             df_expense = df_expense.sort_values('date')
-
-            # Prepare the expense trend data for the chart
             expense_trend_data = {
-                'labels': df_expense['date'].dt.strftime('%Y-%m-%d').tolist(),  # Format date for display
+                'labels': df_expense['date'].dt.strftime('%Y-%m-%d').tolist(),
                 'datasets': [{
                     'label': 'Expenses Over Time',
                     'data': df_expense['amount'].tolist(),
-                    'borderColor': '#FF6384',  # Color for the expense line
-                    'fill': False  # Disable filling below the line
+                    'borderColor': '#FF6384',
+                    'fill': False
                 }]
             }
         else:
-            expense_trend_data = None  # Handle case where expense data is empty or 'date' column is missing
+            expense_trend_data = None
 
-        # Prepare data for Income vs Expenses Scatter Plot
-        if not df_income.empty and not df_expense.empty:
-            # Merge income and expense data by date
-            df_combined = pd.merge(df_income[['date', 'amount']], df_expense[['date', 'amount']],
-                                   on='date', how='outer', suffixes=('_income', '_expense'))
-            df_combined = df_combined.fillna(0)  # Fill NaN with 0 for missing dates
+        # Pagination for transactions table
+        total_items = len(expense_data)
+        total_pages = math.ceil(total_items / items_per_page)
+        paginated_expenses = expense_data[(page - 1) * items_per_page:page * items_per_page]
 
-            # Prepare the scatter plot data
-            scatter_plot_data = {
-                'labels': df_combined['date'].dt.strftime('%Y-%m-%d').tolist(),  # Format date for display
-                'datasets': [
-                    {
-                        'label': 'Income',  # Income scatter points
-                        'data': df_combined['amount_income'].tolist(),
-                        'borderColor': '#4BC0C0',  # Color for the income points
-                        'showLine': True,  # Show line connecting the points
-                        'fill': False,
-                        'pointBackgroundColor': '#36A2EB'  # Color for the points
-                    },
-                    {
-                        'label': 'Expenses',  # Expense scatter points
-                        'data': df_combined['amount_expense'].tolist(),
-                        'borderColor': '#FF6384',  # Color for the expense points
-                        'showLine': True,  # Show line connecting the points
-                        'fill': False,
-                        'pointBackgroundColor': '#FF6384'  # Color for the points
-                    }
-                ]
-            }
-        else:
-            scatter_plot_data = None  # Handle case where either income or expense data is missing
+        print(f"Page: {page}")
 
-        # Pass data to the template
         return render_template('analysis.html',
                                user_name=user_name,
                                total_income=total_income,
@@ -546,15 +527,17 @@ def analysis():
                                goal_progress=goal_progress,
                                pie_data=pie_data,
                                stack_bar_data=stack_bar_data,
-                               line_graph_data=line_graph_data,  # Income trends
-                               expense_trend_data=expense_trend_data,  # Expense trends
-                               scatter_plot_data=scatter_plot_data)  # Income vs Expenses comparison
-
+                               line_graph_data=line_graph_data,
+                               expense_trend_data=expense_trend_data,
+                               table_data=paginated_expenses,
+                               current_page=page,  # pass 'page' instead of 'current_page'
+                               total_pages=total_pages,
+                               df_size=len(expense_data),
+                               per_page=items_per_page)
 
     except Exception as e:
-        # Print error message for debugging
         print(f"Error during analysis: {e}")
-        print(traceback.format_exc())  # Print the full traceback
+        print(traceback.format_exc())
         return "An error occurred during analysis", 500
 
 
@@ -655,15 +638,17 @@ def calculate_tax():
         total_income = float(request.form.get('income', 0))
         total_expenses = float(request.form.get('expenses', 0))
         tax_regime = request.form.get('regime', 'new')  # Get the selected regime (default is new)
-
-        # Taxable income = total income - total expenses
-        taxable_income = total_income - total_expenses
+        session['total_income'] = total_income
+        session['total_expenses'] = total_expenses
+        session['tax_regime'] = tax_regime
 
         # Calculate tax based on the selected regime
         if tax_regime == 'new':
-            tax = calculate_new_regime_tax(taxable_income)
+            taxable_income = total_income
         else:
-            tax = calculate_old_regime_tax(taxable_income)
+            taxable_income = total_income - total_expenses
+
+        tax = calculate_old_regime_tax(taxable_income)
 
         # Calculate advance tax payments
         advance_tax_june, advance_tax_sept, advance_tax_dec, advance_tax_march, remaining_tax_due = calculate_advance_tax(
@@ -683,6 +668,56 @@ def calculate_tax():
                                remaining_tax_due=remaining_tax_due)
     else:
         return render_template('tax_form.html')
+
+
+# # Path to wkhtmltopdf executable (only needed if it's not in your system PATH)
+pdfkit_config = pdfkit.configuration(wkhtmltopdf='C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe')
+
+
+@app.route('/download_tax_pdf')
+def download_tax_pdf():
+    total_income = session['total_income']
+    total_expenses = session['total_expenses']
+    tax_regime = session['tax_regime']
+    # Render only the specific div content for the PDF
+
+    if tax_regime == 'new':
+        taxable_income = total_income
+    else:
+        taxable_income = total_income - total_expenses
+
+    tax = calculate_old_regime_tax(taxable_income)
+
+    # Calculate advance tax payments
+    advance_tax_june, advance_tax_sept, advance_tax_dec, advance_tax_march, remaining_tax_due = calculate_advance_tax(
+        tax)
+
+    rendered_html = render_template('pdf_tax_summary.html',  # Use a separate template for PDF rendering
+                                    total_income=total_income,
+                                    total_expenses=total_expenses,
+                                    taxable_income=taxable_income,
+                                    total_tax=tax,
+                                    tax=tax,
+                                    regime=tax_regime.capitalize(),
+                                    advance_tax_june=advance_tax_june,
+                                    advance_tax_sept=advance_tax_sept,
+                                    advance_tax_dec=advance_tax_dec,
+                                    advance_tax_march=advance_tax_march,
+                                    remaining_tax_due=remaining_tax_due)
+
+    options = {
+        'no-stop-slow-scripts': '',
+        'disable-local-file-access': ''  # Adjust to match your Flask server's base URL
+    }
+
+    pdf = pdfkit.from_string(rendered_html, False, configuration=pdfkit_config, options=options)
+
+    # Create a response object to send the PDF file to the user
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = 'attachment; filename=tax_summary.pdf'
+
+    return response
 
 
 # Function to calculate tax under the new regime

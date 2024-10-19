@@ -7,7 +7,12 @@
     <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="Updated Analysis page">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/static/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/static/css/style.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/contact.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/contact.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/login.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/register.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/register.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +47,35 @@
     &quot;git-widget-placeholder&quot;: &quot;master&quot;
   }
 }</component>
+  <component name="RunManager">
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="personal-finance-management" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Personal Finance Management System" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Personal Finance Management System/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.main" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -194,7 +228,15 @@
       <option name="project" value="LOCAL" />
       <updated>1727889414030</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Updated Analysis page">
+      <option name="closed" value="true" />
+      <created>1729096812326</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1729096812326</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
