@@ -288,7 +288,6 @@ def home():
 
         df = support.generate_df(df)
 
-
         # Initialize earnings, spend, invest, and savings
         earning, spend, invest, saving = 0, 0, 0, 0
 
@@ -299,7 +298,9 @@ def home():
 
                 # Calculate total income and total expenses
                 total_income = df[df['Expense'] == 'Earning']['Amount'].sum()
-                total_expenses = df[df['Expense'] == 'Spend']['Amount'].sum()
+                total_spend = df[df['Expense'] == 'Spend']['Amount'].sum()
+                total_invest = df[df['Expense'] == 'Investment']['Amount'].sum()
+                total_expenses = total_spend + total_invest
                 saving = total_income - total_expenses
 
                 # Flash a warning if expenses exceed income
@@ -311,7 +312,6 @@ def home():
 
         # Prepare data for category-wise pie charts (Spending and Earning)
         try:
-            # Spending category pie chart
             df_spending = df[df['Expense'] == 'Spend']
             if not df_spending.empty and 'Note' in df_spending.columns:
                 spending_category_data = df_spending.groupby('Note')['Amount'].sum().reset_index()
@@ -325,7 +325,6 @@ def home():
             else:
                 spending_pie_data = None
 
-            # Earning category pie chart
             df_earning = df[df['Expense'] == 'Earning']
             if not df_earning.empty and 'Note' in df_earning.columns:
                 earning_category_data = df_earning.groupby('Note')['Amount'].sum().reset_index()
@@ -338,10 +337,23 @@ def home():
                 }
             else:
                 earning_pie_data = None
-
         except Exception as e:
             flash(f"Error processing data for pie charts: {str(e)}")
             spending_pie_data, earning_pie_data = None, None
+
+        # Monthly data aggregation logic
+        try:
+            df['Date'] = pd.to_datetime(df['Date'])
+            df['Month'] = df['Date'].dt.strftime('%B %Y')
+
+            monthly_data = df.groupby(['Month', 'Expense']).agg({'Amount': 'sum'}).unstack(fill_value=0).reset_index()
+            monthly_data.columns = ['Month', 'Earning' , 'Investment', 'Spend']
+            monthly_data['Saving'] = (monthly_data['Earning'] - monthly_data['Spend']) + monthly_data['Investment']
+            monthly_data = monthly_data.to_dict(orient='records')
+            print(monthly_data)
+        except Exception as e:
+            flash(f"Error calculating monthly data: {str(e)}")
+            monthly_data = []
 
         # Check and display user alerts
         alerts = check_alerts(session['user_id'])
@@ -357,13 +369,17 @@ def home():
                                invest=invest,
                                saving=saving,
                                table_data=table_data[0:5],  # Display first 5 records
-                               # income_over_time=income_over_time,
-                               # expenses_over_time=expenses_over_time,
-                               # dates=dates,
                                pie_data1=spending_pie_data,
-                               pie_data2=earning_pie_data)
+                               pie_data2=earning_pie_data,
+                               monthly_data=monthly_data)  # Pass monthly data to the template
     else:
         return redirect('/')
+
+
+
+
+
+
 
 
 @app.route('/home/add_expense', methods=['POST'])
@@ -520,7 +536,8 @@ def analysis(page):  # Add the page parameter here
                                current_page=page,  # pass 'page' instead of 'current_page'
                                total_pages=total_pages,
                                df_size=len(expense_data),
-                               per_page=items_per_page)
+                               per_page=items_per_page,
+                               page=page)
 
     except Exception as e:
         print(f"Error during analysis: {e}")

@@ -82,8 +82,9 @@
             <br>
 
             <!-- Table records -->
+
             <div class="row mt-3">
-                <div class="col-md-8">
+                <div class="table table-dark">
                     <div class="row">
                         <div class="col-md-4">
                             <h4>Latest 5 Records</h4>
@@ -120,6 +121,7 @@
                     </div>
 
                     <!-- Table showing the latest records -->
+
                     <div class="row">
                         <div class="col-md-12">
                             <table class="table table-dark">
@@ -154,10 +156,6 @@
                 </div>
                 {% else %}
 
-                <!-- Bar chart -->
-<!--                <div class="col-md-4 chart_border">-->
-<!--                    <canvas id="barChart"></canvas>-->
-<!--                </div>-->
             </div>
 
             </div>
@@ -165,34 +163,34 @@
             <br>
             <br>
 
-            <!-- Stacked bar chart -->
 
-<!--                <div class="col-md-7 chart_border">-->
-<!--                    <canvas id="stackedBarChart"></canvas>-->
-<!--                </div>-->
-                <div class="col-md-5">
-    <div class="card card-body m-1 p-1 panel list">
-        <h4 align="center">Monthly Record (₹)</h4>
-        <ul class="list-unstyled">
-            <li class="d-flex justify-content-between">
-                <h5 class="text-warning">Month</h5>
-                <span>Income</span>
-                <span>Spend</span>
-                <span>Invest</span>
-                <span>Saving</span>
-            </li>
-            {% for month in monthly_data %}
-            <li class="d-flex justify-content-between">
-                <h6>{{ month['Month'] }}</h6>
-                <span>{{ month['Earning'] }}</span>
-                <span>{{ month['Spend'] }}</span>
-                <span>{{ month['Investment'] }}</span>
-                <span>{{ month['Saving'] }}</span>
-            </li>
-            {% endfor %}
-        </ul>
+ <div class="d-flex justify-content-center">
+    <div class="col-md-5">
+        <div class="card card-body m-1 p-1 panel list">
+            <h4 align="center">Monthly Record (₹)</h4>
+            <ul class="list-unstyled">
+                <li class="d-flex justify-content-between">
+                    <h5 class="text-warning">Month</h5>
+                    <span>Income</span>
+                    <span>Spend</span>
+                    <span>Invest</span>
+                    <span>Saving</span>
+                </li>
+                {% for month in monthly_data %}
+                <li class="d-flex justify-content-between">
+                    <h6>{{ month['Month'] }}</h6>
+                    <span>{{ month['Earning'] }}</span>
+                    <span>{{ month['Spend'] }}</span>
+                    <span>{{ month['Investment'] }}</span>
+                    <span>{{ month['Saving'] }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 </div>
+
+
 
 
             <br>
