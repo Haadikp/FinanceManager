@@ -13,21 +13,17 @@
         <title>Personal Finance Management System - Profile</title>
     </head>
     <body class="page-bg">
-        <div class="bg-nav d-flex flex-column flex-md-row align-items-center pb-0 mb-0 border-bottom">
-            <h5 class="m-3 mr-md-auto font-weight-normal">
-                <a href="/" style="text-decoration: none">Personal Finance Management System - Profile</a>
-            </h5>
-
-            <nav class="m-2 my-md-0 mr-md-3">
-                <a class="py-2 m-2 text-dark" href="/home">Home</a>
-                <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
-<!--                <a class="py-2 m-2 text-dark" href="/profile">Profile</a>-->
-                <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
-                <a class="py-2 m-2 text-dark" href="/calculate_tax">Calculate tax</a>
-                <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
-            </nav>
+        <nav class="navbar bg-nav">
+        <a href="/" class="navbar-brand text-light">Personal Finance Management System - Analysis</a>
+        <nav class="m-2 my-md-0 mr-md-3">
+            <a class="py-2 m-2 text-dark" href="/home">Home</a>
+            <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
+            <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
+            <a class="py-2 m-2 text-dark" href="/calculate_tax">Calculate tax</a>
+            <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
             <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
-        </div>
+        </nav>
+    </nav>
 
         {% for message in get_flashed_messages() %}
             <div class="alert alert-danger alert-dismissible fade show my-1" id="alert" role="alert">

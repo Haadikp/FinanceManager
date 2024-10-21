@@ -503,9 +503,6 @@ def analysis(page):
                 df_income = df_income[df_income['date'].dt.year == int(selected_year)]
                 df_expense = df_expense[df_expense['date'].dt.year == int(selected_year)]
 
-        # Apply sorting
-        if sort_column in ['date', 'pdescription', 'amount']:
-            df_expense = df_expense.sort_values(by=sort_column, ascending=(sort_direction == 'asc'))
 
         # Convert pandas int64 to native Python float
         df_expense['amount'] = df_expense['amount'].astype(float)
@@ -569,6 +566,10 @@ def analysis(page):
             }
         else:
             expense_trend_data = None
+
+            # Apply sorting
+        if sort_column in ['date', 'pdescription', 'amount']:
+            df_expense = df_expense.sort_values(by=sort_column, ascending=(sort_direction == 'asc'))
 
         # Pagination for transactions table
         total_items = len(df_expense)

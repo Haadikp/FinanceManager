@@ -213,21 +213,27 @@
                 window.location.href = '/analysis';
             }
 
-       // Sorting functionality
-        let sortDirection = true;  // true for ascending, false for descending
-        function sortTable(column) {
-            const direction = sortDirection ? 'asc' : 'desc';
-            const urlParams = new URLSearchParams(window.location.search);
+       function sortTable(column) {
+    const urlParams = new URLSearchParams(window.location.search);
 
-    // Maintain current filters when sorting
+    // Get current sort column and direction from the URL (if any)
+    const currentSortColumn = urlParams.get('sort');
+    const currentDirection = urlParams.get('direction');
+
+    // Set new sort direction based on the current sort
+    let direction = 'asc';  // Default direction is ascending
+    if (currentSortColumn === column && currentDirection === 'asc') {
+        direction = 'desc';  // If already ascending, switch to descending
+    }
+
+    // Maintain current filters (if any) when sorting
     const month = urlParams.get('month') || '';
     const year = urlParams.get('year') || '';
 
-    // Redirect with the sort and filter parameters
+    // Redirect with the updated sort and filter parameters
     window.location.href = `/analysis?sort=${column}&direction=${direction}&month=${month}&year=${year}`;
-
-    sortDirection = !sortDirection;  // Toggle direction for the next click
 }
+
 
 
         // Chart.js for various charts
