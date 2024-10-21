@@ -37,26 +37,31 @@
         </div>
 
         <!-- Filters -->
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <label for="monthFilter" class="form-label">Filter by Month</label>
-                <select class="form-select" id="monthFilter" onchange="applyFilters()">
-                    <option value="">All Months</option>
-                    {% for month in months %}
-                    <option value="{{ month }}" {% if selected_month == month %}selected{% endif %}>{{ month }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="yearFilter" class="form-label">Filter by Year</label>
-                <select class="form-select" id="yearFilter" onchange="applyFilters()">
-                    <option value="">All Years</option>
-                    {% for year in years %}
-                    <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label for="monthFilter" class="form-label">Filter by Month</label>
+        <select class="form-select" id="monthFilter">
+            <option value="">All Months</option>
+            {% for month in months %}
+            <option value="{{ month }}" {% if selected_month == month %}selected{% endif %}>{{ month }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="yearFilter" class="form-label">Filter by Year</label>
+        <select class="form-select" id="yearFilter">
+            <option value="">All Years</option>
+            {% for year in years %}
+            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4 d-flex align-items-end ">
+        <button class="btn btn-primary me-2" onclick="applyFilters()">Apply Filters</button>
+        <button class="btn btn-danger" onclick="resetFilters()">Reset Filters</button>
+    </div>
+</div>
+
 
         <!-- Transaction Table -->
         <div class="row">
@@ -66,13 +71,43 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">
-                                <a href="#" onclick="sortTable('date')">Date</a>
+                                <a href="#" onclick="sortTable('date')">Date
+                                <span id="dateSortArrow" class="sort-arrow">
+                                {% if sort_column == 'date' %}
+                                    {% if sort_direction == 'asc' %}
+                                        &#8593; <!-- Up Arrow -->
+                                    {% else %}
+                                        &#8595; <!-- Down Arrow -->
+                                    {% endif %}
+                                {% endif %}
+                            </span>
+                                </a>
                             </th>
                             <th scope="col">
-                                <a href="#" onclick="sortTable('pdescription')">Expense</a>
+                                <a href="#" onclick="sortTable('pdescription')">Expense
+                                <span id="expenseSortArrow" class="sort-arrow">
+                                {% if sort_column == 'pdescription' %}
+                                    {% if sort_direction == 'asc' %}
+                                        &#8593; <!-- Up Arrow -->
+                                    {% else %}
+                                        &#8595; <!-- Down Arrow -->
+                                    {% endif %}
+                                {% endif %}
+                            </span>
+                                </a>
                             </th>
                             <th scope="col">
-                                <a href="#" onclick="sortTable('amount')">Amount</a>
+                                <a href="#" onclick="sortTable('amount')">Amount
+                                 <span id="amountSortArrow" class="sort-arrow">
+                                {% if sort_column == 'amount' %}
+                                    {% if sort_direction == 'asc' %}
+                                        &#8593; <!-- Up Arrow -->
+                                    {% else %}
+                                        &#8595; <!-- Down Arrow -->
+                                    {% endif %}
+                                {% endif %}
+                            </span>
+                                </a>
                             </th>
                         </tr>
                     </thead>
@@ -113,7 +148,7 @@
 
         {% if df_size == 0 %}
         <div>
-            <h3>No records found, seems you are a new user</h3>
+            <h3>No records found on given time period</h3>
         </div>
         {% endif %}
 
@@ -158,18 +193,31 @@
     </div>
 
     <script>
-         // Filtering functionality
-        function applyFilters() {
+         function applyFilters() {
             const month = document.getElementById('monthFilter').value;
             const year = document.getElementById('yearFilter').value;
-            window.location.href = `/analysis?month=${month}&year=${year}`;
+
+            // Ensure only valid filters are added to the URL
+            let queryParams = new URLSearchParams();
+
+            // Only append the month and year if they are selected
+            if (month) queryParams.append('month', month);  // Only append if month is selected
+            if (year) queryParams.append('year', year);     // Only append if year is selected
+
+            // Redirect to the new URL
+            window.location.href = `/analysis?${queryParams.toString()}`;
         }
 
+            function resetFilters() {
+                // Redirect to the analysis page without any filter parameters
+                window.location.href = '/analysis';
+            }
+
        // Sorting functionality
-let sortDirection = true;  // true for ascending, false for descending
-function sortTable(column) {
-    const direction = sortDirection ? 'asc' : 'desc';
-    const urlParams = new URLSearchParams(window.location.search);
+        let sortDirection = true;  // true for ascending, false for descending
+        function sortTable(column) {
+            const direction = sortDirection ? 'asc' : 'desc';
+            const urlParams = new URLSearchParams(window.location.search);
 
     // Maintain current filters when sorting
     const month = urlParams.get('month') || '';

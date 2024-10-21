@@ -377,12 +377,6 @@ def home():
         return redirect('/')
 
 
-
-
-
-
-
-
 @app.route('/home/add_expense', methods=['POST'])
 def add_expense():
     if 'user_id' in session:
@@ -463,18 +457,30 @@ def analysis(page):
         # Convert the expense and income data to pandas DataFrames for easier manipulation
         df_income = pd.DataFrame(income_data)
         df_expense = pd.DataFrame(expense_data)
+        df_expense1 = df_expense.copy()
 
-        # Apply filters for month and year
+        # Ensure that the 'date' columns are in datetime format
+        if 'date' in df_income.columns:
+            df_income['date'] = pd.to_datetime(df_income['date'], errors='coerce')  # Convert, coerce invalids to NaT
+        if 'date' in df_expense.columns:
+            df_expense['date'] = pd.to_datetime(df_expense['date'], errors='coerce')
+            df_expense1['date'] = pd.to_datetime(df_expense1['date'], errors='coerce')  # Convert 'df_expense1' dates as well
+
+        # Filter by selected month and year
         if selected_month or selected_year:
-            if 'date' in df_income.columns:
-                df_income['date'] = pd.to_datetime(df_income['date'])
-            if 'date' in df_expense.columns:
-                df_expense['date'] = pd.to_datetime(df_expense['date'])
-
-            if selected_month:
+            if selected_month and selected_year:
+                df_income = df_income[
+                    (df_income['date'].dt.month == int(selected_month)) &
+                    (df_income['date'].dt.year == int(selected_year))
+                ]
+                df_expense = df_expense[
+                    (df_expense['date'].dt.month == int(selected_month)) &
+                    (df_expense['date'].dt.year == int(selected_year))
+                ]
+            elif selected_month:
                 df_income = df_income[df_income['date'].dt.month == int(selected_month)]
                 df_expense = df_expense[df_expense['date'].dt.month == int(selected_month)]
-            if selected_year:
+            elif selected_year:
                 df_income = df_income[df_income['date'].dt.year == int(selected_year)]
                 df_expense = df_expense[df_expense['date'].dt.year == int(selected_year)]
 
@@ -482,7 +488,7 @@ def analysis(page):
         if sort_column in ['date', 'pdescription', 'amount']:
             df_expense = df_expense.sort_values(by=sort_column, ascending=(sort_direction == 'asc'))
 
-        # Convert pandas int64 to native Python int to avoid serialization issues
+        # Convert pandas int64 to native Python float
         df_expense['amount'] = df_expense['amount'].astype(float)
         df_income['amount'] = df_income['amount'].astype(float)
 
@@ -517,7 +523,6 @@ def analysis(page):
 
         # Prepare income trend line chart data
         if not df_income.empty and 'date' in df_income.columns:
-            df_income['date'] = pd.to_datetime(df_income['date'])
             df_income = df_income.sort_values('date')
             line_graph_data = {
                 'labels': df_income['date'].dt.strftime('%Y-%m-%d').tolist(),
@@ -533,7 +538,6 @@ def analysis(page):
 
         # Prepare expense trend line chart data
         if not df_expense.empty and 'date' in df_expense.columns:
-            df_expense['date'] = pd.to_datetime(df_expense['date'])
             df_expense = df_expense.sort_values('date')
             expense_trend_data = {
                 'labels': df_expense['date'].dt.strftime('%Y-%m-%d').tolist(),
@@ -554,7 +558,7 @@ def analysis(page):
 
         # Prepare data for month and year filters
         months = list(range(1, 13))  # January to December
-        years = sorted(df_expense['date'].dt.year.unique()) if not df_expense.empty else []
+        years = sorted(df_expense1['date'].dt.year.dropna().unique()) if not df_expense1.empty else []
 
         return render_template('analysis.html',
                                user_name=user_name,
@@ -567,7 +571,7 @@ def analysis(page):
                                line_graph_data=line_graph_data,
                                expense_trend_data=expense_trend_data,
                                table_data=paginated_expenses,
-                               current_page=page,  # pass 'page' instead of 'current_page'
+                               current_page=page,
                                total_pages=total_pages,
                                df_size=total_items,
                                months=months,
@@ -583,6 +587,7 @@ def analysis(page):
         print(f"Error during analysis: {e}")
         print(traceback.format_exc())
         return "An error occurred during analysis", 500
+
 
 
 @app.route('/alerts', methods=['GET', 'POST'])
@@ -677,6 +682,12 @@ def toggle_alert():
 
 @app.route('/calculate_tax', methods=['GET', 'POST'])
 def calculate_tax():
+    # Define maximum deductions for each regime
+    MAX_DEDUCTIONS = {
+        'old': 150000,  # Example limit for old regime
+        'new': 0  # No deductions allowed for new regime
+    }
+
     if request.method == 'POST':
         # Get the user inputs from the form
         total_income = float(request.form.get('income', 0))
@@ -685,6 +696,12 @@ def calculate_tax():
         session['total_income'] = total_income
         session['total_expenses'] = total_expenses
         session['tax_regime'] = tax_regime
+
+        # Check for maximum deduction validation
+        max_deduction = MAX_DEDUCTIONS[tax_regime]
+        if total_expenses > max_deduction:
+            flash(f'Deduction amount cannot exceed ₹{max_deduction}. Please adjust your deduction.', 'warning')
+            return render_template('tax_form.html')
 
         # Calculate tax based on the selected regime
         if tax_regime == 'new':
