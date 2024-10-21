@@ -7,6 +7,7 @@ import warnings
 from datetime import datetime
 from datetime import timedelta
 import bcrypt
+import numpy as np
 import pandas as pd
 import pdfkit
 import pymysql
@@ -444,17 +445,50 @@ def get_finance_data(user_id):
 
 @app.route('/analysis', defaults={'page': 1})
 @app.route('/analysis/page/<int:page>')
-def analysis(page):  # Add the page parameter here
+def analysis(page):
     user_id = session.get('user_id')
     user_name = session.get('user_name')
     items_per_page = 10  # Number of items to display per page
+
+    # Get filter and sort parameters from request
+    selected_month = request.args.get('month')
+    selected_year = request.args.get('year')
+    sort_column = request.args.get('sort', 'date')
+    sort_direction = request.args.get('direction', 'asc')  # Default sorting is ascending
 
     try:
         # Fetch income and expense data using the provided function
         income_data, expense_data = get_finance_data(user_id)
 
-        total_income = sum([item['amount'] for item in income_data])
-        total_expenses = sum([item['amount'] for item in expense_data])
+        # Convert the expense and income data to pandas DataFrames for easier manipulation
+        df_income = pd.DataFrame(income_data)
+        df_expense = pd.DataFrame(expense_data)
+
+        # Apply filters for month and year
+        if selected_month or selected_year:
+            if 'date' in df_income.columns:
+                df_income['date'] = pd.to_datetime(df_income['date'])
+            if 'date' in df_expense.columns:
+                df_expense['date'] = pd.to_datetime(df_expense['date'])
+
+            if selected_month:
+                df_income = df_income[df_income['date'].dt.month == int(selected_month)]
+                df_expense = df_expense[df_expense['date'].dt.month == int(selected_month)]
+            if selected_year:
+                df_income = df_income[df_income['date'].dt.year == int(selected_year)]
+                df_expense = df_expense[df_expense['date'].dt.year == int(selected_year)]
+
+        # Apply sorting
+        if sort_column in ['date', 'pdescription', 'amount']:
+            df_expense = df_expense.sort_values(by=sort_column, ascending=(sort_direction == 'asc'))
+
+        # Convert pandas int64 to native Python int to avoid serialization issues
+        df_expense['amount'] = df_expense['amount'].astype(float)
+        df_income['amount'] = df_income['amount'].astype(float)
+
+        # Calculate total income and expenses
+        total_income = df_income['amount'].sum() if not df_income.empty else 0
+        total_expenses = df_expense['amount'].sum() if not df_expense.empty else 0
         net_savings = total_income - total_expenses
         goal_progress = (net_savings / total_income) * 100 if total_income > 0 else 0
 
@@ -468,7 +502,6 @@ def analysis(page):  # Add the page parameter here
         }
 
         # Prepare data for stack bar chart (expenses by category)
-        df_expense = pd.DataFrame(expense_data)
         if not df_expense.empty and 'pdescription' in df_expense.columns:
             pdescription_expenses = df_expense.groupby('pdescription')['amount'].sum().reset_index()
             stack_bar_data = {
@@ -483,7 +516,6 @@ def analysis(page):  # Add the page parameter here
             stack_bar_data = None
 
         # Prepare income trend line chart data
-        df_income = pd.DataFrame(income_data)
         if not df_income.empty and 'date' in df_income.columns:
             df_income['date'] = pd.to_datetime(df_income['date'])
             df_income = df_income.sort_values('date')
@@ -516,11 +548,13 @@ def analysis(page):  # Add the page parameter here
             expense_trend_data = None
 
         # Pagination for transactions table
-        total_items = len(expense_data)
+        total_items = len(df_expense)
         total_pages = math.ceil(total_items / items_per_page)
-        paginated_expenses = expense_data[(page - 1) * items_per_page:page * items_per_page]
+        paginated_expenses = df_expense.iloc[(page - 1) * items_per_page:page * items_per_page].to_dict(orient='records')
 
-        print(f"Page: {page}")
+        # Prepare data for month and year filters
+        months = list(range(1, 13))  # January to December
+        years = sorted(df_expense['date'].dt.year.unique()) if not df_expense.empty else []
 
         return render_template('analysis.html',
                                user_name=user_name,
@@ -535,8 +569,14 @@ def analysis(page):  # Add the page parameter here
                                table_data=paginated_expenses,
                                current_page=page,  # pass 'page' instead of 'current_page'
                                total_pages=total_pages,
-                               df_size=len(expense_data),
+                               df_size=total_items,
+                               months=months,
+                               years=years,
+                               selected_month=selected_month,
+                               selected_year=selected_year,
                                per_page=items_per_page,
+                               sort_column=sort_column,
+                               sort_direction=sort_direction,
                                page=page)
 
     except Exception as e:

@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="Added graphs to home page">
+    <list default="true" id="b13eec08-d2a2-4720-b2f4-def7fe24c69a" name="Changes" comment="Updated home page">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/analysis.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/home.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Personal Finance Management System/templates/verify_otp.html" beforeDir="false" afterPath="$PROJECT_DIR$/Personal Finance Management System/templates/verify_otp.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -265,7 +263,15 @@
       <option name="project" value="LOCAL" />
       <updated>1729365482699</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="Updated home page">
+      <option name="closed" value="true" />
+      <created>1729450604542</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1729450604542</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -290,6 +296,7 @@
     <MESSAGE value="Added download as pdf option" />
     <MESSAGE value="Updated pdf download feature" />
     <MESSAGE value="Added graphs to home page" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added graphs to home page" />
+    <MESSAGE value="Updated home page" />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated home page" />
   </component>
 </project>
