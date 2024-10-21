@@ -17,7 +17,7 @@
     <body class="page-bg">
      <div class="bg-nav d-flex flex-column flex-md-row align-items-center pb-0 mb-0 border-bottom">
       <h5 class="m-3 mr-md-auto font-weight-normal">
-          <a href="/" class="navbar-brand text-light">Personal Finance Management System</a> </h5>
+          <a href="/" class="navbar-brand text-light">Personal Finance Management System - Contact</a> </h5>
 
       <nav class="m-2 my-md-0 mr-md-3">
         <a class="py-2 m-2 text-dark" href="/home">Home</a>
@@ -32,6 +32,18 @@
     </div>
 
      <div class="container">
+
+         <!-- Flash message section -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-info" role="alert">
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
          <section class="contact-sec sec-pad">
           <div class="container">
             <div class="row">

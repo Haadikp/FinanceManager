@@ -266,13 +266,32 @@ def contact():
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
-    name = request.form.get("name")
-    email = request.form.get("email")
-    phone = request.form.get("phone")
-    sub = request.form.get("sub")
-    message = request.form.get("message")
-    flash("Thanks for reaching out to us. We will contact you soon.")
-    return redirect('/')
+    # Get form data
+    name = request.form.get('name')
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+    subject = request.form.get('sub')
+    message_content = request.form.get('message')
+
+    # Define the admin's email
+    admin_email = 'kpgadgetsarena@example.com'  # Replace with actual admin email
+
+    # Send feedback via email
+    msg = Message(f"New Contact Us Message: {subject}",
+                  sender="noreply@app.com",
+                  recipients=[admin_email])  # Send to admin
+    msg.body = f"""
+    New message from: {name}
+    Email: {email}
+    Phone: {phone}
+
+    Message:
+    {message_content}
+    """
+    mail.send(msg)
+
+    flash("Your message has been sent successfully!")
+    return redirect('/contact')  # Redirect back to the contact page
 
 
 @app.route('/home')
