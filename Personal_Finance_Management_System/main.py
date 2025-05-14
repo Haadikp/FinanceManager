@@ -23,12 +23,12 @@ warnings.filterwarnings("ignore")
 
 # Database connection setup
 db = pymysql.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="image_clr"
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASS"),
+    database=os.getenv("DB_NAME"),
+    ssl={"ssl": {}}
 )
-
 # Initialize Flask app, __name__ is passed to tell Flask the location of the app
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  #secret key for the Flask app to secure session data.
