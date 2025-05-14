@@ -16,7 +16,8 @@ from flask import request, redirect, flash
 from flask import session
 from flask_mail import Mail, Message
 
-import support
+from . import support
+
 
 warnings.filterwarnings("ignore")
 
