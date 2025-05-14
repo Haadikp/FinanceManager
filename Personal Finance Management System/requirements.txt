@@ -34,3 +34,7 @@ Werkzeug==2.2.2
 wsproto==1.0.0
 gunicorn
 bcrypt
+pdfkit
+pymysql
+flask-mail
+
