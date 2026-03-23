@@ -1,120 +1,70 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <!-- Required meta tags -->
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+{% extends "base.html" %}
+{% block title %}Contact Us{% endblock %}
+{% block page_title %}Contact Us{% endblock %}
+{% block page_subtitle %}Send us a message or feedback{% endblock %}
+{% block user_display %}Contact{% endblock %}
 
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
-
-        <!-- Bootstrap CSS -->
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/fontawesome.min.css" integrity="sha384-QYIZto+st3yW+o8+5OHfT6S482Zsvz2WfOzpFSXMF9zqeLcFV0/wlZpMtyFcZALm" crossorigin="anonymous">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-
-        <title>Personal Finance Management System - Contact</title>
-    </head>
-    <body class="page-bg">
-     <div class="bg-nav d-flex flex-column flex-md-row align-items-center pb-0 mb-0 border-bottom">
-      <h5 class="m-3 mr-md-auto font-weight-normal">
-          <a href="/" class="navbar-brand text-light">Personal Finance Management System - Contact</a> </h5>
-
-      <nav class="m-2 my-md-0 mr-md-3">
-        <a class="py-2 m-2 text-dark" href="/home">Home</a>
-        <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
-        <a class="py-2 m-2 text-dark" href="/profile">Profile</a>
-        <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
-          <a class="py-2 m-2 text-dark" href="/calculate_tax">Calculate tax</a>
-<!--        <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>-->
-        <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
-      </nav>
-
-    </div>
-
-     <div class="container">
-
-         <!-- Flash message section -->
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="alert alert-info" role="alert">
-                    {% for message in messages %}
-                        {{ message }}
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-         <section class="contact-sec sec-pad">
-          <div class="container">
-            <div class="row">
-              <div class="col-md-6">
-                <div class="contact-detail">
-                  <h1 class="section-title">Contact us</h1>
-
-                  <ul class="contact-ul">
-                    <li> Hadi K P</li>
-
-                    <li>
-                      <i class="material-icons">email</i>
-                      <a href="mailto:23mp2165@rit.ac.in"><b> 23mp2165@rit.ac.in</b></a>
-                    </li>
-                  </ul>
-
-                  <span>
-                      <i class="fa-brands fa-facebook"></i>
-                  </span>
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <form action="/feedback" class="contFrm" method="POST">
-                  <div class="row">
-                    <div class="col-sm-6">
-                      <input type="text" name="name" placeholder="Your Name" class="inptFld" required />
-                    </div>
-
-                    <div class="col-sm-6">
-                      <input type="email" name="email" placeholder="Email Address" class="inptFld" required />
-                    </div>
-
-                    <div class="col-sm-6">
-                      <input type="tel" name="phone" placeholder="Phone Number" class="inptFld" required />
-                    </div>
-
-                    <div class="col-sm-6">
-                      <input type="text" name="sub" placeholder="Subject" class="inptFld" required />
-                    </div>
-
-                    <div class="col-12">
-                      <textarea class="inptFld" name="message" placeholder="Your Message..." required></textarea>
-                    </div>
-
-                    <div class="col-12">
-                      <input type="submit" name="submit" value="SUBMIT" class="inptBtn" />
-                    </div>
-                  </div>
-                </form>
-              </div>
+{% block content %}
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-7">
+    <div class="pfms-card">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-envelope-fill me-2" style="color:var(--accent);"></i>Send a Message</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/feedback" id="contactForm" novalidate>
+          <div class="row g-3" style="margin-bottom:4px;">
+            <div class="col-md-6">
+              <label class="pfms-label">Your Name</label>
+              <input type="text" name="name" class="pfms-input" placeholder="John Doe" required>
             </div>
-
-            <div style="text-align: center; margin-top: 20px;">
-              
+            <div class="col-md-6">
+              <label class="pfms-label">Email</label>
+              <input type="email" name="email" class="pfms-input" placeholder="you@example.com" required>
             </div>
-
+            <div class="col-md-6">
+              <label class="pfms-label">Phone (optional)</label>
+              <input type="tel" name="phone" class="pfms-input" placeholder="+91 99999 00000">
+            </div>
+            <div class="col-md-6">
+              <label class="pfms-label">Subject</label>
+              <input type="text" name="sub" class="pfms-input" placeholder="Your subject" required>
+            </div>
+            <div class="col-12">
+              <label class="pfms-label">Message</label>
+              <textarea name="message" class="pfms-input" rows="5" placeholder="Write your message here…" required style="resize:vertical;"></textarea>
+            </div>
           </div>
-        </section>
+          <button type="submit" class="btn-accent" style="margin-top:16px;justify-content:center;width:100%;padding:12px;">
+            <i class="bi bi-send-fill"></i> Send Message
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
 
-
-     </div>
-
-
-
-
-
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-   </body>
-</html>
+  <div class="col-lg-4">
+    <div class="pfms-card" style="margin-bottom:16px;">
+      <div class="card-body">
+        <div style="font-size:28px;margin-bottom:10px;">📧</div>
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;">Email Support</div>
+        <div style="color:var(--text-secondary);font-size:13px;">support@pfms.app</div>
+      </div>
+    </div>
+    <div class="pfms-card" style="margin-bottom:16px;">
+      <div class="card-body">
+        <div style="font-size:28px;margin-bottom:10px;">⏱️</div>
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;">Response Time</div>
+        <div style="color:var(--text-secondary);font-size:13px;">We respond within 24 hours on business days.</div>
+      </div>
+    </div>
+    <div class="pfms-card">
+      <div class="card-body">
+        <div style="font-size:28px;margin-bottom:10px;">📖</div>
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;">Documentation</div>
+        <div style="color:var(--text-secondary);font-size:13px;">Check the README for setup and usage guides.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

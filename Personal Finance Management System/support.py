@@ -1,5 +1,4 @@
 import pandas as pd
-import plotly.express as px
 import json
 
 def generate_df(df):
@@ -28,9 +27,10 @@ def top_tiles(df=None):
         tiles = {'Earning': 0, 'Investment': 0, 'Saving': 0, 'Spend': 0}
         for i in list(tiles_data.index):
             try:
-                tiles[i] = num2MB(tiles_data.loc[i][0])
-            except:
-                pass
+                # Use .iloc[0] for pandas 2.x compatibility (label-based [0] raises KeyError)
+                tiles[i] = num2MB(float(tiles_data.loc[i].iloc[0]))
+            except Exception as e:
+                print(f"top_tiles error for {i}: {e}")
         return tiles['Earning'], tiles['Spend'], tiles['Investment'], tiles['Saving']
     return 0, 0, 0, 0
 

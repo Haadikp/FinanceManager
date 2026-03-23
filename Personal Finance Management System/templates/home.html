@@ -1,245 +1,343 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <!-- Required meta tags -->
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back, {{ user_name }}{% endblock %}
+{% block user_display %}{{ user_name }}{% endblock %}
 
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
-        <!-- Bootstrap CSS -->
-        <link href="/docs/5.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-        <!-- Google Icons -->
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-
-        <title>Personal Finance Management System - Home</title>
-    </head>
-    <body class="page-bg">
-        <div class="bg-nav d-flex flex-column flex-md-row align-items-center pb-0 mb-0 border-bottom">
-            <h5 class="m-3 mr-md-auto font-weight-normal">
-                 <a href="/" class="navbar-brand text-light">Personal Finance Management System - Home</a>
-            </h5>
-
-            <nav class="m-2 my-md-0 mr-md-3">
-                <a class="py-2 m-2 text-dark" href="/home">Home</a>
-                <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
-                <a class="py-2 m-2 text-dark" href="/profile">Profile</a>
-                <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
-                <a class="py-2 m-2 text-dark" href="/calculate_tax">Calculate tax</a>
-                <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
-            </nav>
-            <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
-        </div>
-        <div>
-            {% for message in get_flashed_messages() %}
-            <div class="alert alert-danger alert-dismissible fade show" id="alert" role="alert">
-                {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Main container -->
-        <div class="container">
-            <!-- Tiles row -->
-            <div class="row my-2">
-                <div class="col-md-3">
-                    <div class="card deep-purple my-1">
-                        <div class="card-body">
-                            <h5 class="text-center">Total Income</h5>
-                            <h2 class="text-center">₹ {{ earning }}</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card alive my-1">
-                        <div class="card-body">
-                            <h5 class="text-center">Total Expense</h5>
-                            <h2 class="text-center">₹ {{ spend }}</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card citrus my-1">
-                        <div class="card-body">
-                            <h5 class="text-center">Total Investments</h5>
-                            <h2 class="text-center">₹ {{ invest }}</h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card green my-1">
-                        <div class="card-body">
-                            <h5 class="text-center">Total Savings</h5>
-                            <h2 class="text-center">₹ {{ saving }}</h2>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <br>
-
-            <!-- Table records -->
-
-            <div class="row mt-3">
-                <div class="table table-dark">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <h4>Latest 5 Records</h4>
-                        </div>
-                        <div class="col-md-8 text-right">
-                            <button type="button" data-toggle="modal" data-target="#add_record" class="btn btn-primary btn-sm">Add New Record</button>
-                        </div>
-
-                        <!-- Add new record modal -->
-                        <div class="modal top fade mt-60" id="add_record" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-mdb-backdrop="true" data-mdb-keyboard="true">
-                            <div class="modal-dialog" style="width: 400px;">
-                                <div class="modal-content text-center">
-                                    <div class="modal-header h5 text-white bg-success justify-content-center">
-                                        Add New Expense Record
-                                    </div>
-                                    <div class="modal-body px-5">
-                                        <form class="form" method="post" action="/home/add_expense">
-                                            <input type="date" class="form-control my-1" id="e_date" name="e_date" placeholder="Select Date" required>
-                                            <select class="form-control my-1" name="e_type" required>
-                                                <option selected hidden value="None">Transaction type...</option>
-                                                <option value="Earning">Income</option>
-                                                <option value="Spend">Expense</option>
-                                                <option value="Investment">Investment</option>
-                                            </select>
-                                            <input type="number" class="form-control my-1" id="amount" name="amount" placeholder="Enter Amount" required>
-                                            <label for="custom_note">Add a custom note:</label>
-                                            <input type="text" class="form-control my-1" id="custom_note" name="custom_note" placeholder="Enter your custom note">
-                                            <input type="submit" class="btn my-2 btn-primary btn-block" id="add" name="add" value="Submit">
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Table showing the latest records -->
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <table class="table table-dark">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">#</th>
-                                        <th scope="col">Date</th>
-                                        <th scope="col">Expense</th>
-                                        <th scope="col">Amount</th>
-                                        <th scope="col">Note</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for row in table_data %}
-                                    <tr>
-                                        <th scope="row">{{ loop.index }}</th>
-                                        <td>{{ row[2] }}</td>
-                                        <td>{{ row[3] }}</td>
-                                        <td>{{ row[4] }}</td>
-                                        <td>{{ row[5] }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                {% if df_size == 0 %}
-                <div>
-                    <h3>No records found, seems you are a new user</h3>
-                </div>
-                {% else %}
-
-            </div>
-
-            </div>
-
-            <br>
-            <br>
-
-
- <div class="d-flex justify-content-center">
-    <div class="col-md-5">
-        <div class="card card-body m-1 p-1 panel list">
-            <h4 align="center">Monthly Record (₹)</h4>
-            <ul class="list-unstyled">
-                <li class="d-flex justify-content-between">
-                    <h5 class="text-warning">Month</h5>
-                    <span>Income</span>
-                    <span>Spend</span>
-                    <span>Invest</span>
-                    <span>Saving</span>
-                </li>
-                {% for month in monthly_data %}
-                <li class="d-flex justify-content-between">
-                    <h6>{{ month['Month'] }}</h6>
-                    <span>{{ month['Earning'] }}</span>
-                    <span>{{ month['Spend'] }}</span>
-                    <span>{{ month['Investment'] }}</span>
-                    <span>{{ month['Saving'] }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
+{% block content %}
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card kpi-income">
+      <div class="kpi-icon"><i class="bi bi-arrow-up-circle-fill"></i></div>
+      <div class="kpi-info">
+        <div class="label">Total Income</div>
+        <div class="value">₹{{ earning }}</div>
+        <div class="sub">All time earnings</div>
+      </div>
     </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card kpi-expense">
+      <div class="kpi-icon"><i class="bi bi-arrow-down-circle-fill"></i></div>
+      <div class="kpi-info">
+        <div class="label">Total Expenses</div>
+        <div class="value">₹{{ spend }}</div>
+        <div class="sub">All time spending</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card kpi-invest">
+      <div class="kpi-icon"><i class="bi bi-graph-up-arrow"></i></div>
+      <div class="kpi-info">
+        <div class="label">Investments</div>
+        <div class="value">₹{{ invest }}</div>
+        <div class="sub">Portfolio value</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="kpi-card kpi-saving">
+      <div class="kpi-icon"><i class="bi bi-piggy-bank-fill"></i></div>
+      <div class="kpi-info">
+        <div class="label">Net Savings</div>
+        <div class="value">₹{{ saving }}</div>
+        <div class="sub">Income – Expenses</div>
+      </div>
+    </div>
+  </div>
 </div>
 
+<!-- Charts Row -->
+{% if df_size > 0 %}
+<div class="row g-3 mb-4">
+  <!-- Monthly Bar Chart -->
+  <div class="col-lg-8">
+    <div class="pfms-card h-100">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-bar-chart-fill me-2" style="color:var(--accent);"></i>Monthly Overview</span>
+      </div>
+      <div class="card-body">
+        <canvas id="monthlyChart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+  <!-- Income vs Expense Pie -->
+  <div class="col-lg-4">
+    <div class="pfms-card h-100">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-pie-chart-fill me-2" style="color:#F59E0B;"></i>Breakdown</span>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="breakdownChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- Category Pies -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="pfms-card">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-tag-fill me-2" style="color:var(--danger);"></i>Spending by Category</span>
+      </div>
+      <div class="card-body">
+        {% if pie_data1 %}
+        <canvas id="pieChart1" height="220"></canvas>
+        {% else %}
+        <div style="text-align:center;color:var(--text-secondary);padding:40px 0;">No spending data yet</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="pfms-card">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-tag-fill me-2" style="color:var(--success);"></i>Income by Category</span>
+      </div>
+      <div class="card-body">
+        {% if pie_data2 %}
+        <canvas id="pieChart2" height="220"></canvas>
+        {% else %}
+        <div style="text-align:center;color:var(--text-secondary);padding:40px 0;">No income data yet</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
-
-            <br>
-            <br>
-
-            <!-- Pie charts -->
-            <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm text-center">
-                    <h5>Category-Wise Spending</h5>
-                    <div class="card-body chart-container">
-                    <canvas id="pieChart1"></canvas>
-                </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm text-center">
-                    <h5>Category-Wise Earnings</h5>
-                    <div class="card-body chart-container">
-                    <canvas id="pieChart2"></canvas>
-                </div>
-            </div>
-
-            {% endif %}
+<!-- Transactions Table + Monthly Data -->
+<div class="row g-3">
+  <!-- Recent Transactions -->
+  <div class="col-lg-8">
+    <div class="pfms-card">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-clock-history me-2" style="color:var(--accent);"></i>Recent Transactions</span>
+        <div class="d-flex gap-2">
+          <a href="/export_csv" class="btn-ghost" style="font-size:13px;"><i class="bi bi-download"></i> CSV</a>
+          <button class="btn-accent" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+            <i class="bi bi-plus-lg"></i> Add
+          </button>
         </div>
+      </div>
+      <div class="card-body" style="padding-top:12px;">
+        {% if table_data %}
+        <div style="overflow-x:auto;">
+          <table class="pfms-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Date</th><th>Type</th><th>Amount</th><th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in table_data %}
+              <tr>
+                <td style="color:var(--text-secondary);">{{ loop.index }}</td>
+                <td>{{ row[2] }}</td>
+                <td>
+                  <span class="type-badge
+                    {% if row[3]=='Earning' %}badge-earning
+                    {% elif row[3]=='Spend' %}badge-spend
+                    {% else %}badge-investment{% endif %}">
+                    {{ row[3] }}
+                  </span>
+                </td>
+                <td style="font-weight:600;">₹{{ "{:,.0f}".format(row[4]) }}</td>
+                <td style="color:var(--text-secondary);">{{ row[5] or '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div style="text-align:center;margin-top:12px;">
+          <a href="/analysis" class="btn-ghost" style="font-size:13px;">View all transactions →</a>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:48px 0;">
+          <div style="font-size:48px;margin-bottom:12px;">📊</div>
+          <div style="font-weight:600;color:var(--text-primary);margin-bottom:6px;">No transactions yet</div>
+          <div style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;">Start tracking your finances today</div>
+          <button class="btn-accent" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+            <i class="bi bi-plus-lg"></i> Add First Transaction
+          </button>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 
-        <!-- JS, Popper.js, and jQuery -->
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+  <!-- Monthly Summary Table -->
+  <div class="col-lg-4">
+    <div class="pfms-card h-100">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-calendar3 me-2" style="color:#F59E0B;"></i>Monthly Summary</span>
+      </div>
+      <div class="card-body" style="padding-top:12px;">
+        {% if monthly_data %}
+        <div style="overflow-x:auto;">
+          <table class="pfms-table" style="font-size:12px;">
+            <thead>
+              <tr>
+                <th>Month</th><th>In</th><th>Out</th><th>Save</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in monthly_data %}
+              <tr>
+                <td style="font-weight:600;">{{ m['Month'] }}</td>
+                <td style="color:var(--success);">{{ m['Earning']|int }}</td>
+                <td style="color:var(--danger);">{{ m['Spend']|int }}</td>
+                <td style="color:{% if m['Saving'] >= 0 %}var(--success){% else %}var(--danger){% endif %};font-weight:600;">
+                  {{ m['Saving']|int }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;color:var(--text-secondary);padding:40px 0;font-size:13px;">No monthly data</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 
-        <script>
-             var spendingPieCtx = document.getElementById('pieChart1').getContext('2d');
-    if ({{ pie_data1 | tojson | safe }}.datasets && {{ pie_data1 | tojson | safe }}.datasets.length > 0) {
-        new Chart(spendingPieCtx, {
-            type: 'pie',
-            data: {{ pie_data1 | tojson | safe }},
-        });
+<!-- Add Record Modal -->
+<div class="modal fade pfms-modal" id="addRecordModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle-fill me-2" style="color:var(--accent);"></i>Add Transaction</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <form method="POST" action="/home/add_expense" id="addForm">
+          <div style="margin-bottom:14px;">
+            <label class="pfms-label">Date</label>
+            <input type="date" name="e_date" id="addDate" class="pfms-input" required max="{{ now }}">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="pfms-label">Transaction Type</label>
+            <select name="e_type" class="pfms-input" required>
+              <option value="" disabled selected>Select type…</option>
+              <option value="Earning">💚 Income</option>
+              <option value="Spend">❤️ Expense</option>
+              <option value="Investment">💜 Investment</option>
+            </select>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="pfms-label">Amount (₹)</label>
+            <input type="number" name="amount" class="pfms-input" placeholder="0.00" step="0.01" min="0.01" required>
+          </div>
+          <div style="margin-bottom:6px;">
+            <label class="pfms-label">Category / Note</label>
+            <select name="notes_dropdown" class="pfms-input" style="margin-bottom:8px;">
+              <option value="">Choose category…</option>
+              <optgroup label="Spending">
+                <option>Food & Dining</option><option>Transport</option><option>Shopping</option>
+                <option>Entertainment</option><option>Healthcare</option><option>Education</option>
+                <option>Utilities</option><option>Rent</option>
+              </optgroup>
+              <optgroup label="Income">
+                <option>Salary</option><option>Freelance</option><option>Business</option>
+                <option>Gift</option><option>Refund</option>
+              </optgroup>
+              <optgroup label="Investment">
+                <option>Stocks</option><option>Mutual Funds</option><option>FD</option>
+                <option>Real Estate</option><option>Crypto</option>
+              </optgroup>
+            </select>
+            <input type="text" name="custom_note" class="pfms-input" placeholder="Or type a custom note…">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" form="addForm" class="btn-accent">
+          <i class="bi bi-check-lg"></i> Save Transaction
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Set today as max date for add form
+document.getElementById('addDate').max = new Date().toISOString().split('T')[0];
+
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+// Monthly Bar Chart
+const monthlyData = {{ monthly_data | tojson | safe }};
+if (monthlyData && monthlyData.length > 0) {
+  new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+      labels: monthlyData.map(m => m.Month),
+      datasets: [
+        { label: 'Income',     data: monthlyData.map(m => m.Earning),    backgroundColor: 'rgba(16,185,129,0.7)',   borderRadius: 6 },
+        { label: 'Expenses',   data: monthlyData.map(m => m.Spend),      backgroundColor: 'rgba(239,68,68,0.7)',    borderRadius: 6 },
+        { label: 'Investment', data: monthlyData.map(m => m.Investment),  backgroundColor: 'rgba(99,102,241,0.7)',   borderRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        x: { grid: { color: gridColor }, border: { display: false } },
+        y: { grid: { color: gridColor }, border: { display: false }, ticks: { callback: v => '₹' + v.toLocaleString() } }
+      }
     }
+  });
+}
 
-    // Pie Chart: Category-wise Earning
-    var earningPieCtx = document.getElementById('pieChart2').getContext('2d');
-    if ({{ pie_data2 | tojson | safe }}.datasets && {{ pie_data2 | tojson | safe }}.datasets.length > 0) {
-        new Chart(earningPieCtx, {
-            type: 'pie',
-            data: {{ pie_data2 | tojson | safe }},
-        });
+// Breakdown Doughnut
+const bCtx = document.getElementById('breakdownChart');
+if (bCtx) {
+  new Chart(bCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Income','Expenses','Investment'],
+      datasets: [{ data: [{{ total_income }}, {{ total_spend }}, {{ total_invest }}],
+        backgroundColor: ['rgba(16,185,129,0.85)','rgba(239,68,68,0.85)','rgba(99,102,241,0.85)'],
+        borderWidth: 0, hoverOffset: 8 }]
+    },
+    options: {
+      cutout: '70%',
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: ctx => ' ₹' + ctx.parsed.toLocaleString() } } }
     }
+  });
+}
 
-        </script>
-    </body>
-</html>
+// Category Pie 1
+{% if pie_data1 %}
+new Chart(document.getElementById('pieChart1'), {
+  type: 'doughnut',
+  data: {{ pie_data1 | tojson | safe }},
+  options: {
+    cutout: '60%',
+    plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: ctx => ' ₹' + ctx.parsed.toLocaleString() } } }
+  }
+});
+{% endif %}
+
+// Category Pie 2
+{% if pie_data2 %}
+new Chart(document.getElementById('pieChart2'), {
+  type: 'doughnut',
+  data: {{ pie_data2 | tojson | safe }},
+  options: {
+    cutout: '60%',
+    plugins: { legend: { position: 'right' }, tooltip: { callbacks: { label: ctx => ' ₹' + ctx.parsed.toLocaleString() } } }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Tax Calculator{% endblock %}
+{% block page_title %}Tax Calculator{% endblock %}
+{% block page_subtitle %}Estimate your Indian income tax liability{% endblock %}
+{% block user_display %}Tax Calculator{% endblock %}
+
+{% block content %}
+<div class="row g-4 justify-content-center">
+  <div class="col-lg-6">
+    <div class="pfms-card">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-calculator-fill me-2" style="color:var(--accent);"></i>Calculate Tax</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/calculate_tax" id="taxForm" novalidate>
+          <div style="margin-bottom:16px;">
+            <label class="pfms-label">Annual Income (₹)</label>
+            <input type="number" name="income" class="pfms-input" placeholder="e.g. 800000" min="0" step="1" required>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label class="pfms-label">Deductions / Expenses (₹)</label>
+            <input type="number" name="expenses" class="pfms-input" placeholder="e.g. 150000" min="0" step="1" required>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
+              Max ₹1,50,000 for old regime · ₹0 for new regime
+            </div>
+          </div>
+          <div style="margin-bottom:24px;">
+            <label class="pfms-label">Tax Regime</label>
+            <div style="display:flex;gap:12px;">
+              <label style="flex:1;display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;
+                            border:1px solid var(--border-color);cursor:pointer;transition:all 0.2s;"
+                     onclick="this.style.borderColor='var(--accent)';this.style.background='var(--accent-glow)';
+                              document.getElementById('oldReg').previousElementSibling.style.borderColor='var(--border-color)';
+                              document.getElementById('oldReg').previousElementSibling.style.background='transparent'">
+                <input type="radio" name="regime" value="new" checked style="accent-color:var(--accent);">
+                <div>
+                  <div style="font-weight:700;font-size:13px;color:var(--text-primary);">New Regime</div>
+                  <div style="font-size:11px;color:var(--text-secondary);">Lower rates, no deductions</div>
+                </div>
+              </label>
+              <label id="oldReg" style="flex:1;display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;
+                            border:1px solid var(--border-color);cursor:pointer;transition:all 0.2s;">
+                <input type="radio" name="regime" value="old" style="accent-color:var(--accent);">
+                <div>
+                  <div style="font-weight:700;font-size:13px;color:var(--text-primary);">Old Regime</div>
+                  <div style="font-size:11px;color:var(--text-secondary);">Higher rates + deductions</div>
+                </div>
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn-accent w-100" style="justify-content:center;padding:12px;">
+            <i class="bi bi-calculator-fill"></i> Calculate Tax
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="pfms-card">
+      <div class="card-body">
+        <div style="font-size:28px;margin-bottom:12px;">📋</div>
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:12px;">Tax Slabs (FY 2024-25)</div>
+        <div style="font-size:12px;color:var(--text-secondary);">
+          <b style="color:var(--text-primary);">New Regime</b>
+          <table class="pfms-table" style="margin-top:8px;margin-bottom:16px;">
+            <thead><tr><th>Income Range</th><th>Rate</th></tr></thead>
+            <tbody>
+              <tr><td>Up to ₹2.5L</td><td style="color:var(--success);">Nil</td></tr>
+              <tr><td>₹2.5L – ₹5L</td><td>5%</td></tr>
+              <tr><td>₹5L – ₹7.5L</td><td>10%</td></tr>
+              <tr><td>₹7.5L – ₹10L</td><td>15%</td></tr>
+              <tr><td>₹10L – ₹12.5L</td><td>20%</td></tr>
+              <tr><td>₹12.5L – ₹15L</td><td>25%</td></tr>
+              <tr><td>Above ₹15L</td><td style="color:var(--danger);">30%</td></tr>
+            </tbody>
+          </table>
+          <b style="color:var(--text-primary);">Old Regime</b>
+          <table class="pfms-table" style="margin-top:8px;">
+            <thead><tr><th>Income Range</th><th>Rate</th></tr></thead>
+            <tbody>
+              <tr><td>Up to ₹2.5L</td><td style="color:var(--success);">Nil</td></tr>
+              <tr><td>₹2.5L – ₹5L</td><td>5%</td></tr>
+              <tr><td>₹5L – ₹10L</td><td>20%</td></tr>
+              <tr><td>Above ₹10L</td><td style="color:var(--danger);">30%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
