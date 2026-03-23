@@ -9,7 +9,6 @@ import warnings
 from datetime import datetime, timedelta
 
 import bcrypt
-import numpy as np
 import pandas as pd
 from flask import Flask, render_template, make_response, request, redirect, flash, session, Response
 from flask_mail import Mail, Message
@@ -24,7 +23,8 @@ warnings.filterwarnings("ignore")
 # App & DB Setup
 # ──────────────────────────────────────────────────────────
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
+# IMPORTANT: must be a stable string — os.urandom() changes every cold start, breaking sessions on Vercel
+app.secret_key = os.environ.get('SECRET_KEY', 'pfms-dev-secret-key-change-in-production')
 
 # Database URI: use Neon / Postgres on Vercel, SQLite locally
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///finance.db')
@@ -40,7 +40,7 @@ db = SQLAlchemy(app)
 # ──────────────────────────────────────────────────────────
 # Flask-Mail configuration (env vars, no hardcoded secrets)
 # ──────────────────────────────────────────────────────────
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-me-in-production')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'pfms-dev-secret-key-change-in-production')
 app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
@@ -76,9 +76,20 @@ class UserAlert(db.Model):
     threshold  = db.Column(db.Float, nullable=False)
     active     = db.Column(db.Boolean, default=True)
 
-# Create tables if they don't exist yet (idempotent)
-with app.app_context():
-    db.create_all()
+# ── Lazy DB init: runs once on the first request, NOT at import time.
+# Module-level db.create_all() crashes Vercel serverless functions during cold start
+# if the DB connection is slow or the SSL handshake isn't complete yet.
+_db_initialized = False
+
+@app.before_request
+def _lazy_init_db():
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            db.create_all()
+            _db_initialized = True
+        except Exception as e:
+            print(f"[DB INIT] Warning: {e}")
 
 # ──────────────────────────────────────────────────────────
 # Helper: check user alerts
