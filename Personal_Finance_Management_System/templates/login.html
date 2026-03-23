@@ -1,99 +1,127 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+{% extends "base.html" %}
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-    <title>Personal Finance Management System - Login</title>
-  </head>
-  <body class="login-page">
-<!--  Creating navbar-->
-    <nav class="navbar bg-nav">
-        <a href="" class="navbar-brand text-light">Personal Finance Management System - Login</a>
-    </nav>
-<!--  creating a main div  -->
-    <div class="container">
-      <div class="row">
-        <div class="col-md-8">
-<!--            <h1 class="display-4 mt-50" style="font-size:70px; color:black;">-->
-<!--                Take charge of your finances with advanced expense tracking and visualization capabilities-->
-<!--            </h1>-->
+{% block auth_content %}
+<div class="auth-wrapper">
+  <!-- Left branding panel -->
+  <div class="auth-left">
+    <div style="position:relative;z-index:1;text-align:center;">
+      <div style="width:70px;height:70px;border-radius:20px;background:linear-gradient(135deg,#6366F1,#8B5CF6);
+                  display:flex;align-items:center;justify-content:center;font-size:32px;color:#fff;
+                  font-weight:800;margin:0 auto 24px;">₹</div>
+      <h1 style="font-size:32px;font-weight:800;color:#fff;margin-bottom:12px;">FinanceOS</h1>
+      <p style="color:rgba(255,255,255,0.65);font-size:15px;max-width:300px;margin:0 auto 40px;line-height:1.6;">
+        Your complete personal finance management platform. Track income, control expenses, grow wealth.
+      </p>
+      <div style="display:flex;gap:32px;justify-content:center;">
+        <div style="text-align:center;">
+          <div style="font-size:22px;font-weight:800;color:#6366F1;">₹∞</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;">Track Any Amount</div>
         </div>
-        <div class="col-md-4">
-            {% for message in get_flashed_messages() %}
-                <div class="alert alert-danger alert-dismissible fade show my-1" id="alert" role="alert">
-                    {{ message }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            {% endfor %}
-          <div class="login-card">
-            <div >
-              <form class="form" method="post" action="/login_validation">
-                <label>Email</label><br>
-                <input type="email" class="form-control" name="email" placeholder="Enter your registered email" required><br>
-                <label>Password</label><br>
-                <input type="password" class="form-control" name="password" placeholder="Enter your password" required><br><br>
-                  <button type="submit" class="btn btn-primary btn-block btn-lg" value="Login">Login</button>
-              </form>
-
-              <!-- Reset Password -->
-              <div class="row">
-                <div class="col my-1">
-                    <div class="form-check m-1"></div>
-                </div>
-                <div class="col">
-                    <p class="mt-2" data-toggle="modal" data-target="#password_reset"><a href="#password_reset">Forget Password?</a></p>
-                </div>
-              </div>
-
-              <!-- Password Reset Modal -->
-              <div class="modal top fade" id="password_reset" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-mdb-backdrop="true" data-mdb-keyboard="true">
-                <div class="modal-dialog" style="width: 300px;">
-                  <div class="modal-content text-center">
-                    <div class="modal-header h5 text-white bg-primary justify-content-center">
-                        Password Reset
-                    </div>
-                    <div class="modal-body px-5">
-                        <p class="py-2">Enter your registered email address to receive a password reset link.</p>
-                        <form class="form" method="post" action="/reset">
-                            <input type="email" class="form-control " id="femail" name="femail" placeholder="Enter registered email" required>
-                            <input type="submit" class="btn my-2 btn-primary btn-block" id="reset" name="reset" value="Send Reset Link">
-                        </form>
-                        <div class="d-flex justify-content-between mt-4">
-                            <a class="" href="/">Login</a>
-                            <a class="" href="/register">Register</a>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <p class="mt-2">Not a member? <a href="/register">Register</a></p>
-              <p class="mt-2">Any Query? <a href="/contact">Contact Us</a> </p>
-            </div>
-          </div>
+        <div style="text-align:center;">
+          <div style="font-size:22px;font-weight:800;color:#10B981;">100%</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;">Secure & Private</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:22px;font-weight:800;color:#F59E0B;">24/7</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;">Available</div>
         </div>
       </div>
     </div>
+  </div>
 
-    <script type="text/javascript">
-        setTimeout(function () {
-            $('#alert').alert('close');
-        }, 3000);
-    </script>
+  <!-- Right form panel -->
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <div style="margin-bottom:32px;">
+        <h2 style="font-size:26px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">Welcome back 👋</h2>
+        <p style="color:var(--text-secondary);font-size:14px;">Sign in to your account to continue</p>
+      </div>
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-  </body>
-</html>
+      <form method="POST" action="/login_validation" id="loginForm" novalidate>
+        <div style="margin-bottom:16px;">
+          <label class="pfms-label">Email address</label>
+          <input type="email" name="email" class="pfms-input" placeholder="you@example.com" required id="loginEmail">
+          <div class="invalid-feedback" style="font-size:12px;color:var(--danger);display:none;" id="emailErr">Please enter a valid email.</div>
+        </div>
+        <div style="margin-bottom:24px;">
+          <label class="pfms-label">Password</label>
+          <div style="position:relative;">
+            <input type="password" name="password" class="pfms-input" placeholder="••••••••" required id="loginPass" style="padding-right:44px;">
+            <button type="button" onclick="togglePass('loginPass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:16px;">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <div class="invalid-feedback" style="font-size:12px;color:var(--danger);display:none;" id="passErr">Password is required.</div>
+        </div>
+
+        <button type="submit" class="btn-accent w-100" style="justify-content:center;padding:12px;">
+          <i class="bi bi-box-arrow-in-right"></i> Sign In
+        </button>
+      </form>
+
+      <div style="margin-top:20px;text-align:center;">
+        <p style="color:var(--text-secondary);font-size:13px;">
+          Forgot password?
+          <button type="button" data-bs-toggle="modal" data-bs-target="#resetModal"
+            style="background:none;border:none;color:var(--accent);font-weight:600;cursor:pointer;font-size:13px;">
+            Reset it
+          </button>
+        </p>
+        <p style="color:var(--text-secondary);font-size:13px;margin-top:8px;">
+          Don't have an account?
+          <a href="/register" style="color:var(--accent);font-weight:600;text-decoration:none;">Create one →</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Password Reset Modal -->
+<div class="modal fade pfms-modal" id="resetModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-key-fill me-2" style="color:var(--accent);"></i>Reset Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+          Enter your registered email address and we'll send you an OTP.
+        </p>
+        <form method="POST" action="/reset">
+          <label class="pfms-label">Email address</label>
+          <input type="email" name="femail" class="pfms-input" placeholder="you@example.com" required style="margin-bottom:16px;">
+          <button type="submit" class="btn-accent w-100" style="justify-content:center;padding:11px;">
+            <i class="bi bi-send"></i> Send OTP
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePass(id, btn) {
+  const inp = document.getElementById(id);
+  const isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  btn.innerHTML = isPass ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+}
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  let valid = true;
+  const email = document.getElementById('loginEmail');
+  const pass  = document.getElementById('loginPass');
+  const emailErr = document.getElementById('emailErr');
+  const passErr  = document.getElementById('passErr');
+  if (!email.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    emailErr.style.display = 'block'; valid = false;
+  } else { emailErr.style.display = 'none'; }
+  if (!pass.value.trim()) {
+    passErr.style.display = 'block'; valid = false;
+  } else { passErr.style.display = 'none'; }
+  if (!valid) e.preventDefault();
+});
+</script>
+{% endblock %}

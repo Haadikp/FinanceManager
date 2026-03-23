@@ -1,280 +1,333 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Analysis{% endblock %}
+{% block page_title %}Analysis{% endblock %}
+{% block page_subtitle %}Deep dive into your financial data{% endblock %}
+{% block user_display %}{{ user_name }}{% endblock %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <title>Personal Finance Management System - Analysis</title>
-</head>
-
-<body class="page-bg">
-    <nav class="navbar bg-nav">
-        <a href="/" class="navbar-brand text-light">Personal Finance Management System - Analysis</a>
-        <nav class="m-2 my-md-0 mr-md-3">
-            <a class="py-2 m-2 text-dark" href="/home">Home</a>
-            <a class="py-2 m-2 text-dark" href="/profile">Profile</a>
-            <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
-            <a class="py-2 m-2 text-dark" href="/calculate_tax">Calculate tax</a>
-            <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
-            <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
-        </nav>
-    </nav>
-
-
-    <div class="container mt-4">
-        <div class="row mb-3">
-    <div class="col-md-4">
-        <label for="monthFilter" class="form-label">Filter by Month</label>
-        <select class="form-select" id="monthFilter">
-            <option value="">All Months</option>
-            {% for month in months %}
-            <option value="{{ month }}" {% if selected_month == month %}selected{% endif %}>{{ month }}</option>
-            {% endfor %}
-        </select>
+{% block content %}
+<!-- KPI row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="kpi-card kpi-income">
+      <div class="kpi-icon"><i class="bi bi-arrow-up-circle-fill"></i></div>
+      <div class="kpi-info">
+        <div class="label">Total Income</div>
+        <div class="value" style="font-size:20px;">₹{{ "{:,.0f}".format(total_income) }}</div>
+      </div>
     </div>
-    <div class="col-md-4">
-        <label for="yearFilter" class="form-label">Filter by Year</label>
-        <select class="form-select" id="yearFilter">
-            <option value="">All Years</option>
-            {% for year in years %}
-            <option value="{{ year }}" {% if selected_year == year %}selected{% endif %}>{{ year }}</option>
-            {% endfor %}
-        </select>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card kpi-expense">
+      <div class="kpi-icon"><i class="bi bi-arrow-down-circle-fill"></i></div>
+      <div class="kpi-info">
+        <div class="label">Total Expenses</div>
+        <div class="value" style="font-size:20px;">₹{{ "{:,.0f}".format(total_expenses) }}</div>
+      </div>
     </div>
-    <div class="col-md-4 d-flex align-items-end ">
-        <button class="btn btn-primary me-2" onclick="applyFilters()">Apply Filters</button>
-        <button class="btn btn-danger" onclick="resetFilters()">Reset Filters</button>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card kpi-saving">
+      <div class="kpi-icon"><i class="bi bi-piggy-bank-fill"></i></div>
+      <div class="kpi-info">
+        <div class="label">Net Savings</div>
+        <div class="value" style="font-size:20px;">₹{{ "{:,.0f}".format(net_savings) }}</div>
+      </div>
     </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="kpi-card kpi-invest">
+      <div class="kpi-icon"><i class="bi bi-percent"></i></div>
+      <div class="kpi-info">
+        <div class="label">Savings Rate</div>
+        <div class="value" style="font-size:20px;">{{ goal_progress }}%</div>
+      </div>
+    </div>
+  </div>
 </div>
 
-        <div class="card grey shadow-sm mb-4">
-            <div class="card-body text-center">
-                <h3>Financial Summary</h3>
-                <p>Total Income: ₹{{ total_income }}</p>
-                <p>Total Expenses: ₹{{ total_expenses }}</p>
-                <p>Net Savings: ₹{{ net_savings }}</p>
-                <p>Goal Progress: {{ goal_progress }}%</p>
-            </div>
-        </div>
-
-        <!-- Filters -->
-
-
-        <!-- Transaction Table -->
-        <div class="row">
-            <div class="col-md-12">
-                <table class="table table-dark">
-                    <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">
-                                <a href="#" onclick="sortTable('date')">Date
-                                <span id="dateSortArrow" class="sort-arrow">
-                                {% if sort_column == 'date' %}
-                                    {% if sort_direction == 'asc' %}
-                                        &#8593; <!-- Up Arrow -->
-                                    {% else %}
-                                        &#8595; <!-- Down Arrow -->
-                                    {% endif %}
-                                {% endif %}
-                            </span>
-                                </a>
-                            </th>
-                            <th scope="col">
-                                <a href="#" onclick="sortTable('pdescription')">Expense
-                                <span id="expenseSortArrow" class="sort-arrow">
-                                {% if sort_column == 'pdescription' %}
-                                    {% if sort_direction == 'asc' %}
-                                        &#8593; <!-- Up Arrow -->
-                                    {% else %}
-                                        &#8595; <!-- Down Arrow -->
-                                    {% endif %}
-                                {% endif %}
-                            </span>
-                                </a>
-                            </th>
-                            <th scope="col">
-                                <a href="#" onclick="sortTable('amount')">Amount
-                                 <span id="amountSortArrow" class="sort-arrow">
-                                {% if sort_column == 'amount' %}
-                                    {% if sort_direction == 'asc' %}
-                                        &#8593; <!-- Up Arrow -->
-                                    {% else %}
-                                        &#8595; <!-- Down Arrow -->
-                                    {% endif %}
-                                {% endif %}
-                            </span>
-                                </a>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in table_data %}
-                        <tr>
-                            <th scope="row">{{ loop.index + (current_page - 1) * 10 }}</th>
-                            <td>{{ row['date'] }}</td>
-                            <td>{{ row['pdescription'] }}</td>
-                            <td>₹{{ row['amount'] }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% if total_pages > 1 %}
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center">
-                        {% if current_page > 1 %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('analysis', page=current_page-1) }}">Previous</a>
-                        </li>
-                        {% endif %}
-                        {% for page_num in range(1, total_pages + 1) %}
-                        <li class="page-item {% if page_num == current_page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('analysis', page=page_num) }}">{{ page_num }}</a>
-                        </li>
-                        {% endfor %}
-                        {% if current_page < total_pages %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('analysis', page=current_page+1) }}">Next</a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-                {% endif %}
-            </div>
-        </div>
-
-        {% if df_size == 0 %}
-        <div>
-            <h3>No records found on given time period</h3>
-        </div>
-        {% endif %}
-
-        <!-- Charts Section -->
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm text-center">
-                    <h5>Income vs Expenses</h5>
-                    <div class="card-body chart-container">
-                        <canvas id="incomeExpenseChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm text-center">
-                    <h5>Category-Wise Spending</h5>
-                    <div class="card-body chart-container">
-                        <canvas id="categorySpendingChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm text-center">
-                    <h5>Expense Trends Over Time</h5>
-                    <div class="card-body chart-container">
-                        <canvas id="expenseTrendChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm text-center">
-                    <h5>Income Trend Over Time</h5>
-                    <div class="card-body chart-container">
-                        <canvas id="incomeTrendChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="pfms-card h-100">
+      <div class="card-head"><span class="card-title"><i class="bi bi-pie-chart-fill me-2" style="color:var(--accent);"></i>Income vs Expenses</span></div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="pieChart" height="220"></canvas>
+      </div>
     </div>
+  </div>
+  <div class="col-md-4">
+    <div class="pfms-card h-100">
+      <div class="card-head"><span class="card-title"><i class="bi bi-bar-chart-fill me-2" style="color:#F59E0B;"></i>Spending by Category</span></div>
+      <div class="card-body">
+        {% if stack_bar_data %}
+        <canvas id="stackBarChart" height="220"></canvas>
+        {% else %}
+        <div style="text-align:center;color:var(--text-secondary);padding:60px 0;">No expense data</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="pfms-card h-100">
+      <div class="card-head"><span class="card-title"><i class="bi bi-graph-up me-2" style="color:var(--success);"></i>Income Trend</span></div>
+      <div class="card-body">
+        {% if line_graph_data %}
+        <canvas id="lineChart" height="220"></canvas>
+        {% else %}
+        <div style="text-align:center;color:var(--text-secondary);padding:60px 0;">No data</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 
-    <script>
-         function applyFilters() {
-            const month = document.getElementById('monthFilter').value;
-            const year = document.getElementById('yearFilter').value;
+<!-- Expense Trend -->
+{% if expense_trend_data %}
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="pfms-card">
+      <div class="card-head"><span class="card-title"><i class="bi bi-graph-down me-2" style="color:var(--danger);"></i>Expense Trend Over Time</span></div>
+      <div class="card-body"><canvas id="expenseTrendChart" height="100"></canvas></div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
-            // Ensure only valid filters are added to the URL
-            let queryParams = new URLSearchParams();
+<!-- Filters + Table -->
+<div class="pfms-card">
+  <div class="card-head" style="flex-wrap:wrap;gap:12px;">
+    <span class="card-title"><i class="bi bi-table me-2" style="color:var(--accent);"></i>Transactions ({{ df_size }} total)</span>
+    <a href="/export_csv" class="btn-ghost" style="font-size:13px;"><i class="bi bi-download"></i> Export CSV</a>
+  </div>
 
-            // Only append the month and year if they are selected
-            if (month) queryParams.append('month', month);  // Only append if month is selected
-            if (year) queryParams.append('year', year);     // Only append if year is selected
+  <!-- Filter Form -->
+  <div style="padding:16px 24px;border-bottom:1px solid var(--border-color);">
+    <form method="GET" action="/analysis" id="filterForm">
+      <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-2">
+          <label class="pfms-label">Start Date</label>
+          <input type="date" name="start_date" class="pfms-input" value="{{ start_date or '' }}">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="pfms-label">End Date</label>
+          <input type="date" name="end_date" class="pfms-input" value="{{ end_date or '' }}">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="pfms-label">Month</label>
+          <select name="month" class="pfms-input">
+            <option value="">All Months</option>
+            {% set month_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+            {% for m in months %}
+            <option value="{{ m }}" {% if selected_month == m|string %}selected{% endif %}>{{ month_names[m-1] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="pfms-label">Year</label>
+          <select name="year" class="pfms-input">
+            <option value="">All Years</option>
+            {% for y in years %}
+            <option value="{{ y }}" {% if selected_year == y|string %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="pfms-label">Type</label>
+          <select name="expense_type" class="pfms-input">
+            <option value="">All Types</option>
+            <option value="Earning"    {% if selected_type=='Earning'    %}selected{% endif %}>Income</option>
+            <option value="Spend"      {% if selected_type=='Spend'      %}selected{% endif %}>Expense</option>
+            <option value="Investment" {% if selected_type=='Investment'  %}selected{% endif %}>Investment</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="pfms-label">Category</label>
+          <input type="text" name="category" class="pfms-input" placeholder="Filter..." value="{{ selected_cat or '' }}">
+        </div>
+        <div class="col-12 d-flex gap-2">
+          <button type="submit" class="btn-accent"><i class="bi bi-funnel-fill"></i> Apply</button>
+          <a href="/analysis" class="btn-ghost"><i class="bi bi-x"></i> Clear</a>
+        </div>
+      </div>
+      <input type="hidden" name="sort" value="{{ sort_column }}">
+      <input type="hidden" name="direction" value="{{ sort_direction }}">
+    </form>
+  </div>
 
-            // Redirect to the new URL
-            window.location.href = `/analysis?${queryParams.toString()}`;
-        }
+  <!-- Table -->
+  <div class="card-body" style="padding-top:8px;overflow-x:auto;">
+    {% if table_data %}
+    <table class="pfms-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th><a href="/analysis?sort=date&direction={{ 'asc' if sort_direction=='desc' else 'desc' }}&month={{ selected_month or '' }}&year={{ selected_year or '' }}&expense_type={{ selected_type or '' }}&category={{ selected_cat or '' }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}"
+              style="color:var(--text-secondary);text-decoration:none;">
+              Date {% if sort_column=='date' %}<i class="bi bi-caret-{{ 'up' if sort_direction=='asc' else 'down' }}-fill"></i>{% endif %}
+          </a></th>
+          <th>Type</th>
+          <th><a href="/analysis?sort=amount&direction={{ 'asc' if sort_direction=='desc' else 'desc' }}&month={{ selected_month or '' }}&year={{ selected_year or '' }}&expense_type={{ selected_type or '' }}&category={{ selected_cat or '' }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}"
+              style="color:var(--text-secondary);text-decoration:none;">
+              Amount {% if sort_column=='amount' %}<i class="bi bi-caret-{{ 'up' if sort_direction=='asc' else 'down' }}-fill"></i>{% endif %}
+          </a></th>
+          <th>Category</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in table_data %}
+        <tr>
+          <td style="color:var(--text-secondary);">{{ (current_page - 1) * per_page + loop.index }}</td>
+          <td>{{ row.date }}</td>
+          <td>
+            <span class="type-badge
+              {% if row.expense=='Earning' %}badge-earning
+              {% elif row.expense=='Spend' %}badge-spend
+              {% else %}badge-investment{% endif %}">
+              {{ row.expense }}
+            </span>
+          </td>
+          <td style="font-weight:600;">₹{{ "{:,.0f}".format(row.amount) }}</td>
+          <td style="color:var(--text-secondary);">{{ row.pdescription or '—' }}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-ghost" style="padding:4px 10px;font-size:12px;" data-bs-toggle="modal" data-bs-target="#editModal{{ row.id }}"
+                title="Edit"><i class="bi bi-pencil-fill"></i></button>
+              <form method="POST" action="/delete_expense/{{ row.id }}" onsubmit="return confirm('Delete this transaction?');" style="display:inline;">
+                <button type="submit" class="btn-ghost" style="padding:4px 10px;font-size:12px;color:var(--danger);border-color:rgba(239,68,68,0.3);"
+                  title="Delete"><i class="bi bi-trash-fill"></i></button>
+              </form>
+            </div>
+            <!-- Edit Modal -->
+            <div class="modal fade pfms-modal" id="editModal{{ row.id }}" tabindex="-1">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Edit Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <form method="POST" action="/edit_expense">
+                    <div class="modal-body" style="padding:24px;">
+                      <input type="hidden" name="expense_id" value="{{ row.id }}">
+                      <div style="margin-bottom:14px;">
+                        <label class="pfms-label">Date</label>
+                        <input type="date" name="e_date" class="pfms-input" value="{{ row.date }}" required max="{{ now }}">
+                      </div>
+                      <div style="margin-bottom:14px;">
+                        <label class="pfms-label">Type</label>
+                        <select name="e_type" class="pfms-input" required>
+                          <option value="Earning"    {% if row.expense=='Earning'    %}selected{% endif %}>💚 Income</option>
+                          <option value="Spend"      {% if row.expense=='Spend'      %}selected{% endif %}>❤️ Expense</option>
+                          <option value="Investment" {% if row.expense=='Investment'  %}selected{% endif %}>💜 Investment</option>
+                        </select>
+                      </div>
+                      <div style="margin-bottom:14px;">
+                        <label class="pfms-label">Amount (₹)</label>
+                        <input type="number" name="amount" class="pfms-input" value="{{ row.amount }}" step="0.01" required>
+                      </div>
+                      <div>
+                        <label class="pfms-label">Category / Note</label>
+                        <input type="text" name="custom_note" class="pfms-input" value="{{ row.pdescription }}">
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn-accent"><i class="bi bi-check-lg"></i> Update</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-            function resetFilters() {
-                // Redirect to the analysis page without any filter parameters
-                window.location.href = '/analysis';
-            }
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px;flex-wrap:wrap;">
+      {% if current_page > 1 %}
+      <a href="/analysis/page/{{ current_page - 1 }}?sort={{ sort_column }}&direction={{ sort_direction }}&month={{ selected_month or '' }}&year={{ selected_year or '' }}&expense_type={{ selected_type or '' }}&category={{ selected_cat or '' }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}"
+         class="btn-ghost" style="padding:6px 14px;font-size:13px;"><i class="bi bi-chevron-left"></i></a>
+      {% endif %}
+      {% for p in range(1, total_pages + 1) %}
+      <a href="/analysis/page/{{ p }}?sort={{ sort_column }}&direction={{ sort_direction }}&month={{ selected_month or '' }}&year={{ selected_year or '' }}&expense_type={{ selected_type or '' }}&category={{ selected_cat or '' }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}"
+         class="{{ 'btn-accent' if p == current_page else 'btn-ghost' }}" style="padding:6px 12px;font-size:13px;">{{ p }}</a>
+      {% endfor %}
+      {% if current_page < total_pages %}
+      <a href="/analysis/page/{{ current_page + 1 }}?sort={{ sort_column }}&direction={{ sort_direction }}&month={{ selected_month or '' }}&year={{ selected_year or '' }}&expense_type={{ selected_type or '' }}&category={{ selected_cat or '' }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}"
+         class="btn-ghost" style="padding:6px 14px;font-size:13px;"><i class="bi bi-chevron-right"></i></a>
+      {% endif %}
+    </div>
+    <div style="text-align:center;font-size:12px;color:var(--text-secondary);margin-top:8px;">
+      Showing {{ (current_page-1)*per_page+1 }}–{{ [current_page*per_page, df_size]|min }} of {{ df_size }}
+    </div>
+    {% endif %}
+    {% else %}
+    <div style="text-align:center;padding:48px;color:var(--text-secondary);">
+      <i class="bi bi-inbox" style="font-size:40px;display:block;margin-bottom:12px;"></i>
+      No transactions match the selected filters
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
 
-       function sortTable(column) {
-    const urlParams = new URLSearchParams(window.location.search);
+{% block scripts %}
+<script>
+const gridColor = document.documentElement.getAttribute('data-theme') === 'dark'
+  ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
 
-    // Get current sort column and direction from the URL (if any)
-    const currentSortColumn = urlParams.get('sort');
-    const currentDirection = urlParams.get('direction');
+{% if pie_data %}
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {{ pie_data | tojson | safe }},
+  options: { cutout:'65%', plugins:{ legend:{ position:'bottom' }, tooltip:{ callbacks:{ label: ctx => ' ₹'+ctx.parsed.toLocaleString() } } } }
+});
+{% endif %}
 
-    // Set new sort direction based on the current sort
-    let direction = 'asc';  // Default direction is ascending
-    if (currentSortColumn === column && currentDirection === 'asc') {
-        direction = 'desc';  // If already ascending, switch to descending
+{% if stack_bar_data %}
+new Chart(document.getElementById('stackBarChart'), {
+  type: 'bar',
+  data: {{ stack_bar_data | tojson | safe }},
+  options: {
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid:{ color:gridColor }, border:{ display:false }, ticks:{ callback: v => '₹'+v } },
+      y: { grid:{ display:false }, border:{ display:false } }
     }
+  }
+});
+{% endif %}
 
-    // Maintain current filters (if any) when sorting
-    const month = urlParams.get('month') || '';
-    const year = urlParams.get('year') || '';
+{% if line_graph_data %}
+new Chart(document.getElementById('lineChart'), {
+  type: 'line',
+  data: {{ line_graph_data | tojson | safe }},
+  options: {
+    plugins: { legend:{ display:false } },
+    scales: {
+      x: { display: false },
+      y: { grid:{ color:gridColor }, border:{ display:false }, ticks:{ callback: v => '₹'+v } }
+    }
+  }
+});
+{% endif %}
 
-    // Redirect with the updated sort and filter parameters
-    window.location.href = `/analysis?sort=${column}&direction=${direction}&month=${month}&year=${year}`;
-}
-
-
-
-        // Chart.js for various charts
-        var pieCtx = document.getElementById('incomeExpenseChart').getContext('2d');
-        if ({{ pie_data | tojson | safe }}.datasets && {{ pie_data | tojson | safe }}.datasets.length > 0) {
-            new Chart(pieCtx, {
-                type: 'pie',
-                data: {{ pie_data | tojson | safe }},
-            });
-        }
-
-        var barCtx = document.getElementById('categorySpendingChart').getContext('2d');
-        if ({{ stack_bar_data | tojson | safe }} && {{ stack_bar_data | tojson | safe }}.datasets.length > 0) {
-            new Chart(barCtx, {
-                type: 'bar',
-                data: {{ stack_bar_data | tojson | safe }},
-            });
-        }
-
-        var expenseTrendCtx = document.getElementById('expenseTrendChart').getContext('2d');
-        if ({{ expense_trend_data | tojson | safe }} && {{ expense_trend_data | tojson | safe }}.datasets.length > 0) {
-            new Chart(expenseTrendCtx, {
-                type: 'line',
-                data: {{ expense_trend_data | tojson | safe }},
-            });
-        }
-
-        var incomeTrendCtx = document.getElementById('incomeTrendChart').getContext('2d');
-        if ({{ line_graph_data | tojson | safe }} && {{ line_graph_data | tojson | safe }}.datasets.length > 0) {
-            new Chart(incomeTrendCtx, {
-                type: 'line',
-                data: {{ line_graph_data | tojson | safe }},
-            });
-        }
-    </script>
-
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-
-</body>
-
-</html>
+{% if expense_trend_data %}
+new Chart(document.getElementById('expenseTrendChart'), {
+  type: 'line',
+  data: {{ expense_trend_data | tojson | safe }},
+  options: {
+    plugins: { legend:{ display:false } },
+    scales: {
+      x: { grid:{ color:gridColor }, border:{ display:false } },
+      y: { grid:{ color:gridColor }, border:{ display:false }, ticks:{ callback: v => '₹'+v } }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}
