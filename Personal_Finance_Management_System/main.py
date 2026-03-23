@@ -274,23 +274,19 @@ def home():
     rows = UserExpense.query.filter_by(user_id=user_id).order_by(UserExpense.pdate.desc()).all()
     table_data = [(r.id, r.user_id, r.pdate, r.expense, r.amount, r.pdescription) for r in rows]
 
-    df = pd.DataFrame(table_data, columns=['#', 'User_Id', 'Date', 'Expense', 'Amount', 'Note'])
-    df = support.generate_df(df) if not df.empty else df
-
     earning = spend = invest = saving = 0
+    total_income = total_spend = total_invest = 0
     spending_pie_data = earning_pie_data = None
     monthly_data = []
 
-    if not df.empty:
+    if rows:
         try:
-            # Calculate totals directly — reliable and pandas-version independent
-            total_income   = float(df[df['Expense'] == 'Earning']['Amount'].sum())
-            total_spend    = float(df[df['Expense'] == 'Spend']['Amount'].sum())
-            total_invest   = float(df[df['Expense'] == 'Investment']['Amount'].sum())
+            total_income   = sum(float(r.amount) for r in rows if r.expense == 'Earning')
+            total_spend    = sum(float(r.amount) for r in rows if r.expense == 'Spend')
+            total_invest   = sum(float(r.amount) for r in rows if r.expense == 'Investment')
             total_expenses = total_spend + total_invest
             saving_val     = total_income - total_expenses
 
-            # Format for KPI card display (e.g. 1500 → "1.5K")
             earning = support.num2MB(total_income)
             spend   = support.num2MB(total_spend)
             invest  = support.num2MB(total_invest)
@@ -303,39 +299,47 @@ def home():
 
         # Pie chart data
         try:
-            df_sp = df[df['Expense'] == 'Spend']
-            if not df_sp.empty:
-                grp = df_sp.groupby('Note')['Amount'].sum().reset_index()
+            spends = [r for r in rows if r.expense == 'Spend']
+            if spends:
+                grp = {}
+                for r in spends:
+                    grp[r.pdescription] = grp.get(r.pdescription, 0) + float(r.amount)
+                labels = list(grp.keys())
                 colors = ['#4F46E5','#7C3AED','#DB2777','#DC2626','#D97706','#059669','#0891B2','#0284C7']
                 spending_pie_data = {
-                    'labels': grp['Note'].tolist(),
-                    'datasets': [{'data': grp['Amount'].tolist(),
-                                  'backgroundColor': colors[:len(grp)],
-                                  'borderWidth': 2}]
+                    'labels': labels,
+                    'datasets': [{'data': list(grp.values()), 'backgroundColor': colors[:len(labels)], 'borderWidth': 2}]
                 }
-            df_ea = df[df['Expense'] == 'Earning']
-            if not df_ea.empty:
-                grp2 = df_ea.groupby('Note')['Amount'].sum().reset_index()
+
+            earns = [r for r in rows if r.expense == 'Earning']
+            if earns:
+                grp2 = {}
+                for r in earns:
+                    grp2[r.pdescription] = grp2.get(r.pdescription, 0) + float(r.amount)
+                labels2 = list(grp2.keys())
                 colors2 = ['#059669','#10B981','#34D399','#6EE7B7','#A7F3D0','#D1FAE5']
                 earning_pie_data = {
-                    'labels': grp2['Note'].tolist(),
-                    'datasets': [{'data': grp2['Amount'].tolist(),
-                                  'backgroundColor': colors2[:len(grp2)],
-                                  'borderWidth': 2}]
+                    'labels': labels2,
+                    'datasets': [{'data': list(grp2.values()), 'backgroundColor': colors2[:len(labels2)], 'borderWidth': 2}]
                 }
         except Exception as e:
             flash(f"Chart error: {e}", "danger")
 
         # Monthly data
         try:
-            df['Date'] = pd.to_datetime(df['Date'])
-            df['Month'] = df['Date'].dt.strftime('%b %Y')
-            monthly = df.groupby(['Month', 'Expense'])['Amount'].sum().unstack(fill_value=0).reset_index()
-            for col in ['Earning', 'Spend', 'Investment']:
-                if col not in monthly.columns:
-                    monthly[col] = 0
-            monthly['Saving'] = monthly['Earning'] - monthly['Spend'] - monthly['Investment']
-            monthly_data = monthly.to_dict(orient='records')
+            monthly = {}
+            for r in rows:
+                m_str = r.pdate.strftime('%b %Y')
+                if m_str not in monthly:
+                    monthly[m_str] = {'Month': m_str, 'Earning': 0, 'Spend': 0, 'Investment': 0}
+                monthly[m_str][r.expense] += float(r.amount)
+            
+            for m in monthly.values():
+                m['Saving'] = m['Earning'] - m['Spend'] - m['Investment']
+            
+            monthly_data = list(monthly.values())
+            # Sort chronologically
+            monthly_data.sort(key=lambda x: datetime.strptime(x['Month'], '%b %Y'))
         except Exception as e:
             flash(f"Monthly data error: {e}", "danger")
 
@@ -351,9 +355,9 @@ def home():
                            invest=invest,
                            saving=saving,
                            # raw numbers for charts
-                           total_income=total_income if not df.empty else 0,
-                           total_spend=total_spend if not df.empty else 0,
-                           total_invest=total_invest if not df.empty else 0,
+                           total_income=total_income,
+                           total_spend=total_spend,
+                           total_invest=total_invest,
                            table_data=table_data[:5],
                            pie_data1=spending_pie_data,
                            pie_data2=earning_pie_data,
@@ -465,39 +469,31 @@ def analysis(page):
         # Combine all for full table
         all_data = income_data + expense_data
 
-        df_all    = pd.DataFrame(all_data) if all_data else pd.DataFrame(
-            columns=['id','date','expense','amount','pdescription'])
-        df_income = pd.DataFrame(income_data) if income_data else pd.DataFrame(
-            columns=['id','date','expense','amount','pdescription'])
-        df_expense = pd.DataFrame(expense_data) if expense_data else pd.DataFrame(
-            columns=['id','date','expense','amount','pdescription'])
+        # --- Apply filters to all_data for the table ---
+        filtered_data = []
+        for r in all_data:
+            r_date = datetime.strptime(r['date'], '%Y-%m-%d').date()
+            if start_date_str and r_date < datetime.strptime(start_date_str, '%Y-%m-%d').date():
+                continue
+            if end_date_str and r_date > datetime.strptime(end_date_str, '%Y-%m-%d').date():
+                continue
+            if selected_month and r_date.month != int(selected_month):
+                continue
+            if selected_year and r_date.year != int(selected_year):
+                continue
+            if selected_type and r['expense'] != selected_type:
+                continue
+            if selected_cat and selected_cat.lower() not in r['pdescription'].lower():
+                continue
+            filtered_data.append(r)
 
-        for df in [df_all, df_income, df_expense]:
-            if 'date' in df.columns and not df.empty:
-                df['date'] = pd.to_datetime(df['date'], errors='coerce')
-
-        # --- Apply filters to df_all for the table ---
-        df_table = df_all.copy()
-        if start_date_str:
-            df_table = df_table[df_table['date'] >= pd.to_datetime(start_date_str)]
-        if end_date_str:
-            df_table = df_table[df_table['date'] <= pd.to_datetime(end_date_str)]
-        if selected_month:
-            df_table  = df_table[df_table['date'].dt.month == int(selected_month)]
-            df_income = df_income[df_income['date'].dt.month == int(selected_month)] if not df_income.empty else df_income
-            df_expense = df_expense[df_expense['date'].dt.month == int(selected_month)] if not df_expense.empty else df_expense
-        if selected_year:
-            df_table  = df_table[df_table['date'].dt.year == int(selected_year)]
-            df_income = df_income[df_income['date'].dt.year == int(selected_year)] if not df_income.empty else df_income
-            df_expense = df_expense[df_expense['date'].dt.year == int(selected_year)] if not df_expense.empty else df_expense
-        if selected_type:
-            df_table = df_table[df_table['expense'] == selected_type]
-        if selected_cat:
-            df_table = df_table[df_table['pdescription'].str.contains(selected_cat, case=False, na=False)]
+        # Same filters apply to income/expense separately for charts
+        filtered_income = [r for r in filtered_data if r['expense'] == 'Earning']
+        filtered_expense = [r for r in filtered_data if r['expense'] != 'Earning']
 
         # Totals from filtered income/expense
-        total_income   = df_income['amount'].sum() if not df_income.empty else 0
-        total_expenses = df_expense['amount'].sum() if not df_expense.empty else 0
+        total_income   = sum(r['amount'] for r in filtered_income)
+        total_expenses = sum(r['amount'] for r in filtered_expense)
         net_savings    = total_income - total_expenses
         goal_progress  = round((net_savings / total_income) * 100, 1) if total_income > 0 else 0
 
@@ -509,54 +505,56 @@ def analysis(page):
         }
 
         stack_bar_data = None
-        if not df_expense.empty and 'pdescription' in df_expense.columns:
-            grp = df_expense.groupby('pdescription')['amount'].sum().reset_index()
+        if filtered_expense:
+            grp = {}
+            for r in filtered_expense:
+                grp[r['pdescription']] = grp.get(r['pdescription'], 0) + float(r['amount'])
             colors = ['#4F46E5','#7C3AED','#DB2777','#DC2626','#D97706','#059669','#0891B2','#0284C7',
                       '#6366F1','#8B5CF6','#EC4899','#F43F5E','#F59E0B','#34D399','#22D3EE','#38BDF8']
             stack_bar_data = {
-                'labels': grp['pdescription'].tolist(),
+                'labels': list(grp.keys()),
                 'datasets': [{'label': 'Expenses by Category',
-                              'data': grp['amount'].tolist(),
+                              'data': list(grp.values()),
                               'backgroundColor': colors[:len(grp)]}]
             }
 
         line_graph_data = None
-        if not df_income.empty:
-            dfi = df_income.sort_values('date')
+        if filtered_income:
+            filtered_income.sort(key=lambda x: x['date'])
             line_graph_data = {
-                'labels': dfi['date'].dt.strftime('%Y-%m-%d').tolist(),
-                'datasets': [{'label': 'Income', 'data': dfi['amount'].tolist(),
+                'labels': [r['date'] for r in filtered_income],
+                'datasets': [{'label': 'Income', 'data': [r['amount'] for r in filtered_income],
                               'borderColor': '#10B981', 'backgroundColor': 'rgba(16,185,129,0.1)',
                               'fill': True, 'tension': 0.4}]
             }
 
         expense_trend_data = None
-        if not df_expense.empty:
-            dfe = df_expense.sort_values('date')
+        if filtered_expense:
+            filtered_expense.sort(key=lambda x: x['date'])
             expense_trend_data = {
-                'labels': dfe['date'].dt.strftime('%Y-%m-%d').tolist(),
-                'datasets': [{'label': 'Expenses', 'data': dfe['amount'].tolist(),
+                'labels': [r['date'] for r in filtered_expense],
+                'datasets': [{'label': 'Expenses', 'data': [r['amount'] for r in filtered_expense],
                               'borderColor': '#EF4444', 'backgroundColor': 'rgba(239,68,68,0.1)',
                               'fill': True, 'tension': 0.4}]
             }
 
         # Sort table
-        if sort_column in ['date', 'pdescription', 'amount', 'expense'] and not df_table.empty:
-            df_table = df_table.sort_values(by=sort_column, ascending=(sort_direction == 'asc'))
-
-        # Format date for display
-        if not df_table.empty:
-            df_table['date'] = df_table['date'].dt.strftime('%Y-%m-%d')
+        if sort_column in ['date', 'pdescription', 'amount', 'expense'] and filtered_data:
+            reverse = (sort_direction == 'desc')
+            if sort_column == 'amount':
+                filtered_data.sort(key=lambda x: float(x[sort_column]), reverse=reverse)
+            else:
+                filtered_data.sort(key=lambda x: str(x[sort_column]).lower(), reverse=reverse)
 
         # Years for filter dropdown
-        years = []
-        if not df_all.empty:
-            years = sorted(df_all['date'].dt.year.dropna().unique().tolist())
+        years = sorted(list(set(datetime.strptime(r['date'], '%Y-%m-%d').year for r in all_data))) if all_data else []
 
         # Pagination
-        total_items = len(df_table)
+        total_items = len(filtered_data)
         total_pages = max(1, math.ceil(total_items / items_per_page))
-        paginated   = df_table.iloc[(page - 1) * items_per_page: page * items_per_page].to_dict(orient='records')
+        start_idx   = (page - 1) * items_per_page
+        end_idx     = page * items_per_page
+        paginated   = filtered_data[start_idx:end_idx]
 
         return render_template('analysis.html',
                                user_name=userdata.username,
