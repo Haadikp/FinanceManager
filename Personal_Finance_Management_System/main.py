@@ -9,7 +9,6 @@ import warnings
 from datetime import datetime, timedelta
 
 import bcrypt
-import pandas as pd
 from flask import Flask, render_template, make_response, request, redirect, flash, session, Response
 from flask_mail import Mail, Message
 from flask_sqlalchemy import SQLAlchemy
