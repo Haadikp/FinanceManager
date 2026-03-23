@@ -1,0 +1,458 @@
+/*@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap'); */
+
+/* Importing Bootstrap */
+/*@import url('https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css'); */
+
+
+        .chart-container {
+            width: 100%;
+            height: 500px; /* Set a fixed height */
+            display: flex;
+            justify-content: center; /* Horizontally center the chart */
+            align-items: center;     /* Vertically center the chart */
+        }
+
+        .chart-container canvas {
+            max-height: 100%; /* Ensure the canvas fills the container */
+            max-width: 100%;  /* Ensure the canvas fills the container */
+        }
+
+.bg-nav {
+    background: #3d77f4;
+}
+
+.body {
+    background: #F0F0F0;
+}
+
+.page-bg {
+    background: #F5F5DC;
+}
+
+.login-page {
+    background-image: url('/static/images/login-background.jpg'); /* Replace with your image path */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: 100vh; /* Ensure it covers the full page height */
+}
+
+
+.deep-purple{
+    background: #673AB7;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #512DA8, #673AB7);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #512DA8, #673AB7); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+
+.alive{
+    background: #CB356B;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #BD3F32, #CB356B);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #BD3F32, #dd3c77); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+.citrus{
+    background: #FDC830;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #F37335, #c09213);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #F37335, #FDC830); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+.green{
+    background: #11998e;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #38ef7d, #11998e);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #38ef7d, #11998e); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+}
+
+.grey{
+    background: #F0F0F0;  /* fallback for old browsers */
+    }
+
+.mt-50{
+    margin-top : 40px
+}
+
+.mt-60{
+    margin-top : 60px
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  scroll-behavior: smooth;
+  box-sizing: border-box;
+}
+
+body {
+  overflow-x: hidden;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+}
+
+.login-card {
+    background-color: rgba(255, 255, 255, 0.8); /* White background with 80% opacity */
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Optional shadow for depth */
+}
+
+/* Optional: Adjust the form elements styling */
+
+
+ul {
+  list-style: none;
+}
+
+input {
+  overflow: hidden;
+}
+
+.card-body{
+  box-shadow: 5px 5px 5px black;
+
+
+}
+.section-title {
+  position: relative;
+  font-size: 30px;
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+  margin: 0 0 35px;
+}
+
+.sec-pad {
+  padding: 60px 0 0;
+  margin: 50px 0;
+}
+
+.contact-sec {
+  align-item: center;
+  display: flex;
+  background-color: #5cbde466;
+}
+
+.contact-sec .contact-ul li,
+.contact-ul b {
+  font-size: 20px;
+  margin: 10px 0;
+  font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+  word-wrap: break-word;
+}
+
+.contact-sec .contact-ul i {
+  font-size: 18px;
+  padding: 10px;
+  margin-right: 10px;
+  border-radius: 50%;
+}
+.contact-detail a {
+  color: #000;
+  text-decoration: none;
+}
+
+.contact-sec .contact-ul li b:hover {
+  color: #f93;
+}
+
+.contact-sec .contact-ul li .fa-location-dot {
+  color: #f44337;
+  border: 2px solid #f4433790;
+}
+
+.contact-sec .contact-ul li .fa-phone {
+  color: #00b055;
+  border: 2px solid #00b05590;
+}
+
+.contact-sec .contact-ul li .fa-envelope {
+  color: #ff6347;
+  border: 2px solid #ff634790;
+}
+
+.contact-detail span {
+  width: 400px;
+  display: flex;
+  justify-content: center;
+}
+.contact-detail span a {
+  font-size: 20px;
+  padding: 6px 12px;
+  color: #000;
+  border-radius: 50%;
+  margin: 0px 5px;
+}
+.contact-detail span .fb {
+  color: #3b5998;
+  border: 3px solid #3b5998;
+}
+.contact-detail span .fb:hover {
+  color: #fff;
+  background-color: #3b5998;
+}
+
+.contact-detail span .insta {
+  color: #833ab4;
+  border: 3px solid #833ab4;
+}
+.contact-detail span .insta:hover {
+  color: #fff;
+  background-color: #833ab4;
+}
+
+.contact-detail span .twitter {
+  color: #00acee;
+  border: 3px solid #00acee;
+}
+.contact-detail span .twitter:hover {
+  color: #fff;
+  background-color: #00acee;
+}
+
+form.contFrm {
+  max-width: 396px;
+  margin: auto;
+}
+
+.inptFld {
+  width: 100%;
+  height: 50px;
+  border: 0;
+  margin: 0 0 10px;
+  border-radius: 8px;
+  padding: 0 20px;
+  font-size: 16px;
+  color: #000;
+}
+
+.inptFld:focus {
+  outline-offset: -4px;
+  outline: 1px solid #f93;
+}
+
+.contFrm textarea {
+  height: 75px;
+  padding-top: 5px;
+}
+.inptBtn {
+  height: 50px;
+  border: 0;
+  background: #00b055;
+  font-size: 14px;
+  color: #fff;
+  margin: auto;
+  letter-spacing: 1px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 200px;
+}
+
+/* Responcive css Start */
+
+@media (max-width: 991px) {
+  .sec-pad {
+    padding: 20px 0 0px;
+  }
+
+  .contact-sec .contact-ul li,
+  .contact-ul b {
+    font-size: 18px;
+  }
+
+  .contact-sec .contact-ul i {
+    font-size: 14px;
+    padding: 6px;
+    margin-right: 6px;
+  }
+
+  .inptFld {
+    height: 40px;
+    margin: 0 0 10px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 767px) {
+  .contact-detail span {
+    width: auto;
+  }
+  .contact-detail span a {
+    font-size: 18px;
+    padding: 5px 10px;
+    color: #000;
+    border-radius: 50%;
+    margin: 0px 5px 20px;
+  }
+}
+
+@media (max-width: 575px) {
+  .section-title {
+    font-size: 26px;
+    font-weight: 500;
+  }
+  .contact-sec {
+    border-radius: 10% 10% 0% 0% / 5% 5% 0% 0%;
+  }
+
+  .contact-sec .contact-ul i {
+    border: none;
+  }
+  .inptFld {
+    height: 36px;
+    margin: 0 0 8px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-sec .contact-ul li,
+  .contact-ul b {
+    font-size: 16px;
+  }
+}
+
+
+.chart_border {
+  border: 2px solid white;
+  border-radius: 40px 10px;
+}
+
+
+.panel {
+    background: linear-gradient(
+        90deg, #262a4f, #122442
+    );
+    box-shadow:
+    -5px -5px 8px #293063,
+    5px 5px 8px #11163c;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+
+.list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2em;
+}
+
+.list span {
+    color: #ea335d;
+}
+
+.list h4, h6 {
+    color: #ffffff;
+}
+
+
+/* Sales panel */
+.sales {
+    grid-column-start: span 3;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-gap: 2em;
+}
+
+.sales > div {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+    padding: 1em;
+}
+
+.sales h1 {
+    margin: 0.5em 0;
+}
+
+.sales small{
+    color: #fff;
+}
+
+.sales > div:nth-child(even) {
+    background: linear-gradient(
+        0deg, #b52b4b, #ea335d
+    );
+}
+
+.sales > div:nth-child(odd) {
+    background: linear-gradient(
+        0deg, #178add, #03dcee
+    );
+}
+
+
+/* goal panel */
+
+.goal {
+    padding: 1em;
+}
+
+.goals,
+.goal,
+.goal-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.goal-title h4:nth-child(1) {
+    margin: 0 2em 0 0;
+}
+
+.goal-title {
+    margin-bottom: 0.5em;
+}
+
+.goals {
+    flex-direction: column;
+}
+
+.goal {
+    margin: 1em 0;
+}
+
+.icon-color-up {
+    color: #03ee2e;
+    margin-right: 0.5em;
+    font-size: 2em;
+}
+
+.icon-color-down {
+    color: #d02727;
+    margin-right: 0.5em;
+    font-size: 2em;
+}
+
+.goal-panel {
+    color:#ffff;
+    background: linear-gradient(
+        90deg, #192f37, #264652
+    );
+    box-shadow:
+    -5px -5px 8px #264652,
+    5px 5px 8px #192f37;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.body2 {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #fff;
+    background: #172042;
+}
+
+.fa-check-circle {
+  color: green;
+}
+
+.width-auto {
+    width: auto;
+  }
+
+.width-100 {
+    width: 100%;
+  }
+
+.titleClr{
+  color: #000;
+}

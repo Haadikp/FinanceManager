@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
+        <!-- Bootstrap CSS -->
+        <link href="/docs/5.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <!-- Google Icons -->
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+        <title>Personal Finance Management System - Home</title>
+    </head>
+    <body class="page-bg">
+        <div class="bg-nav d-flex flex-column flex-md-row align-items-center pb-0 mb-0 border-bottom">
+            <h5 class="m-3 mr-md-auto font-weight-normal">
+                 <a href="/" class="navbar-brand text-light">Personal Finance Management System - Home</a>
+            </h5>
+
+            <nav class="m-2 my-md-0 mr-md-3">
+<!--                <a class="py-2 m-2 text-dark" href="/home">Home</a>-->
+                <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
+                <a class="py-2 m-2 text-dark" href="/profile">Profile</a>
+                <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>
+                <a class="py-2 m-2 text-dark" href="/calculate_tax">Calculate tax</a>
+                <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
+            </nav>
+            <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
+        </div>
+        <div>
+            {% for message in get_flashed_messages() %}
+            <div class="alert alert-danger alert-dismissible fade show" id="alert" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Main container -->
+        <div class="container">
+            <!-- Tiles row -->
+            <div class="row my-2">
+                <div class="col-md-3">
+                    <div class="card deep-purple my-1">
+                        <div class="card-body">
+                            <h5 class="text-center">Total Income</h5>
+                            <h2 class="text-center">₹ {{ earning }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card alive my-1">
+                        <div class="card-body">
+                            <h5 class="text-center">Total Expense</h5>
+                            <h2 class="text-center">₹ {{ spend }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card citrus my-1">
+                        <div class="card-body">
+                            <h5 class="text-center">Total Investments</h5>
+                            <h2 class="text-center">₹ {{ invest }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card green my-1">
+                        <div class="card-body">
+                            <h5 class="text-center">Total Savings</h5>
+                            <h2 class="text-center">₹ {{ saving }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <br>
+
+            <!-- Table records -->
+
+            <div class="row mt-3">
+                <div class="table table-dark">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h4>Latest 5 Records</h4>
+                        </div>
+                        <div class="col-md-8 text-right">
+                            <button type="button" data-toggle="modal" data-target="#add_record" class="btn btn-primary btn-sm">Add New Record</button>
+                        </div>
+
+                        <!-- Add new record modal -->
+                        <div class="modal top fade mt-60" id="add_record" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true" data-mdb-backdrop="true" data-mdb-keyboard="true">
+                            <div class="modal-dialog" style="width: 400px;">
+                                <div class="modal-content text-center">
+                                    <div class="modal-header h5 text-white bg-success justify-content-center">
+                                        Add New Expense Record
+                                    </div>
+                                    <div class="modal-body px-5">
+                                        <form class="form" method="post" action="/home/add_expense">
+                                            <input type="date" class="form-control my-1" id="e_date" name="e_date" placeholder="Select Date" required>
+                                            <select class="form-control my-1" name="e_type" required>
+                                                <option selected hidden value="None">Transaction type...</option>
+                                                <option value="Earning">Income</option>
+                                                <option value="Spend">Expense</option>
+                                                <option value="Investment">Investment</option>
+                                            </select>
+                                            <input type="number" class="form-control my-1" id="amount" name="amount" placeholder="Enter Amount" required>
+                                            <label for="custom_note">Add a custom note:</label>
+                                            <input type="text" class="form-control my-1" id="custom_note" name="custom_note" placeholder="Enter your custom note">
+                                            <input type="submit" class="btn my-2 btn-primary btn-block" id="add" name="add" value="Submit">
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table showing the latest records -->
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table table-dark">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Date</th>
+                                        <th scope="col">Expense</th>
+                                        <th scope="col">Amount</th>
+                                        <th scope="col">Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in table_data %}
+                                    <tr>
+                                        <th scope="row">{{ loop.index }}</th>
+                                        <td>{{ row[2] }}</td>
+                                        <td>{{ row[3] }}</td>
+                                        <td>{{ row[4] }}</td>
+                                        <td>{{ row[5] }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {% if df_size == 0 %}
+                <div>
+                    <h3>No records found, seems you are a new user</h3>
+                </div>
+                {% else %}
+
+            </div>
+
+            </div>
+
+            <br>
+            <br>
+
+
+ <div class="d-flex justify-content-center">
+    <div class="col-md-5">
+        <div class="card card-body m-1 p-1 panel list">
+            <h4 align="center">Monthly Record (₹)</h4>
+            <ul class="list-unstyled">
+                <li class="d-flex justify-content-between">
+                    <h5 class="text-warning">Month</h5>
+                    <span>Income</span>
+                    <span>Spend</span>
+                    <span>Invest</span>
+                    <span>Saving</span>
+                </li>
+                {% for month in monthly_data %}
+                <li class="d-flex justify-content-between">
+                    <h6>{{ month['Month'] }}</h6>
+                    <span>{{ month['Earning'] }}</span>
+                    <span>{{ month['Spend'] }}</span>
+                    <span>{{ month['Investment'] }}</span>
+                    <span>{{ month['Saving'] }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+
+
+            <br>
+            <br>
+
+            <!-- Pie charts -->
+            <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm text-center">
+                    <h5>Category-Wise Spending</h5>
+                    <div class="card-body chart-container">
+                    <canvas id="pieChart1"></canvas>
+                </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm text-center">
+                    <h5>Category-Wise Earnings</h5>
+                    <div class="card-body chart-container">
+                    <canvas id="pieChart2"></canvas>
+                </div>
+            </div>
+
+            {% endif %}
+        </div>
+
+        <!-- JS, Popper.js, and jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+
+        <script>
+             var spendingPieCtx = document.getElementById('pieChart1').getContext('2d');
+    if ({{ pie_data1 | tojson | safe }}.datasets && {{ pie_data1 | tojson | safe }}.datasets.length > 0) {
+        new Chart(spendingPieCtx, {
+            type: 'pie',
+            data: {{ pie_data1 | tojson | safe }},
+        });
+    }
+
+    // Pie Chart: Category-wise Earning
+    var earningPieCtx = document.getElementById('pieChart2').getContext('2d');
+    if ({{ pie_data2 | tojson | safe }}.datasets && {{ pie_data2 | tojson | safe }}.datasets.length > 0) {
+        new Chart(earningPieCtx, {
+            type: 'pie',
+            data: {{ pie_data2 | tojson | safe }},
+        });
+    }
+
+        </script>
+    </body>
+</html>
