@@ -1,96 +1,138 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+{% extends "base.html" %}
+{% block title %}Alerts{% endblock %}
+{% block page_title %}Smart Alerts{% endblock %}
+{% block page_subtitle %}Get notified when thresholds are crossed{% endblock %}
+{% block user_display %}Alerts{% endblock %}
 
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <title>Personal Finance Management System - Alerts</title>
-</head>
-<body class="page-bg">
-    <!-- Navbar -->
-    <nav class="navbar bg-nav">
-        <a href="" class="navbar-brand text-light">Personal Finance Management System - Alerts</a>
-        <nav class="m-2 my-md-0 mr-md-3">
-            <a class="py-2 m-2 text-dark" href="/home">Home</a>
-            <a class="py-2 m-2 text-dark" href="/analysis">Analysis</a>
-            <a class="py-2 m-2 text-dark" href="/profile">Profile</a>
-<!--            <a class="py-2 m-2 text-dark" href="/alerts">Alerts</a>-->
-            <a class="py-2 m-2 text-dark" href="/calculate_tax">Calculate tax</a>
-            <a class="py-2 m-2 text-dark" href="/contact">Contact Us</a>
-            <a class="btn m-2 btn-outline-warning" href="/logout">Logout</a>
-        </nav>
-    </nav>
-
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                {% for message in get_flashed_messages() %}
-                <div class="alert alert-danger alert-dismissible fade show my-1" id="alert" role="alert">
-                    {{ message }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                {% endfor %}
-                <div class="card mt-5">
-                    <div class="card-body">
-                        <h4 class="card-title text-center">Set Your Alerts</h4>
-                        <form class="form" method="post" action="/alerts">
-                            <label for="alert_type">Alert Type</label><br>
-                            <select class="form-control" name="alert_type" id="alert_type" required>
-                                <option value="expense">Expense</option>
-<!--                                <option value="income">Income</option>-->
-                            </select><br>
-                            <label for="threshold">Threshold Amount (₹)</label><br>
-                            <input type="number" class="form-control" name="threshold" id="threshold" placeholder="Enter the threshold amount" required><br><br>
-                            <input type="submit" class="btn btn-primary btn-block btn-lg" value="Set Alert">
-                        </form>
-                        <div class="mt-4">
-                            <h5>Existing Alerts:</h5>
-                            <ul class="list-group">
-                                {% for alert in alerts %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>
-                                        {{ alert[0] | capitalize }} - ₹{{ alert[1] }} 
-                                    </span>
-                                    <div>
-                                        <!-- <form class="d-inline" method="post" action="/alerts/edit">
-                                            <input type="hidden" name="alert_id" value="{{ alert[2] }}">
-                                            <input type="number" name="threshold" placeholder="New threshold" class="form-control d-inline" style="width: 50px;">
-                                            <button type="submit" class="btn btn-warning btn-sm">Edit</button>
-                                        </form> -->
-                                        <form class="d-inline" method="post" action="/alerts/delete">
-                                            <input type="hidden" name="alert_id" value="{{ alert[2] }}">
-                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                        </form>
-                                        <form class="d-inline" method="post" action="/alerts/toggle">
-                                            <input type="hidden" name="alert_id" value="{{ alert[2] }}">
-                                            {% if alert[3] %}
-                                            <!-- <button type="submit" class="btn btn-secondary btn-sm">Deactivate</button> -->
-                                            {% else %}
-                                            <button type="submit" class="btn btn-success btn-sm">Activate/Deactivate</button>
-                                            {% endif %}
-                                        </form>
-                                    </div>
-                                </li>
-                                {% endfor %}
-                            </ul>      
-                        </div>
-                    </div>
-                </div>
-            </div>            
-        </div>       
+{% block content %}
+<div class="row g-4">
+  <!-- Create Alert -->
+  <div class="col-lg-4">
+    <div class="pfms-card">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-bell-plus-fill me-2" style="color:var(--warning);"></i>New Alert</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/alerts" id="alertForm">
+          <div style="margin-bottom:16px;">
+            <label class="pfms-label">Alert Type</label>
+            <select name="alert_type" class="pfms-input" required>
+              <option value="" disabled selected>Choose type…</option>
+              <option value="expense">💸 Expense exceeds limit</option>
+              <option value="income">💰 Income falls below target</option>
+            </select>
+          </div>
+          <div style="margin-bottom:20px;">
+            <label class="pfms-label">Threshold Amount (₹)</label>
+            <input type="number" name="threshold" class="pfms-input" placeholder="e.g. 10000" min="1" step="1" required>
+          </div>
+          <button type="submit" class="btn-accent w-100" style="justify-content:center;">
+            <i class="bi bi-bell-fill"></i> Create Alert
+          </button>
+        </form>
+      </div>
     </div>
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6Jty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-</body>
-</html>
+    <div class="pfms-card" style="margin-top:16px;background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border-color:rgba(99,102,241,0.2);">
+      <div class="card-body">
+        <div style="font-size:28px;margin-bottom:8px;">💡</div>
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:6px;">How alerts work</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">
+          <b>Expense alert:</b> Notifies when your cumulative spending exceeds the threshold.<br><br>
+          <b>Income alert:</b> Notifies when your total earnings fall below the set target.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts List -->
+  <div class="col-lg-8">
+    <div class="pfms-card">
+      <div class="card-head">
+        <span class="card-title"><i class="bi bi-bell-fill me-2" style="color:var(--accent);"></i>Your Alerts ({{ alerts|length }})</span>
+      </div>
+      <div class="card-body">
+        {% if alerts %}
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          {% for alert in alerts %}
+          <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;transition:all 0.2s;"
+               onmouseover="this.style.borderColor='var(--accent-glow)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;
+                          background:{% if alert.alert_type=='expense' %}rgba(239,68,68,0.15){% else %}rgba(16,185,129,0.15){% endif %};">
+                {{ '💸' if alert.alert_type == 'expense' else '💰' }}
+              </div>
+              <div>
+                <div style="font-weight:700;color:var(--text-primary);margin-bottom:2px;">
+                  {% if alert.alert_type == 'expense' %}Expense exceeds{% else %}Income below{% endif %}
+                  <span style="color:{% if alert.alert_type=='expense' %}var(--danger){% else %}var(--success){% endif %};">
+                    ₹{{ "{:,.0f}".format(alert.threshold) }}
+                  </span>
+                </div>
+                <div>
+                  <span style="font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;
+                    background:{% if alert.active %}rgba(16,185,129,0.15){% else %}rgba(156,163,175,0.15){% endif %};
+                    color:{% if alert.active %}#10B981{% else %}#9CA3AF{% endif %};">
+                    {{ '● Active' if alert.active else '○ Inactive' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <!-- Edit -->
+              <button class="btn-ghost" style="font-size:12px;padding:5px 10px;" data-bs-toggle="modal" data-bs-target="#editAlert{{ alert.alert_id }}">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <!-- Toggle -->
+              <form method="POST" action="/alerts/toggle" style="display:inline;">
+                <input type="hidden" name="alert_id" value="{{ alert.alert_id }}">
+                <button type="submit" class="btn-ghost" style="font-size:12px;padding:5px 10px;color:{% if alert.active %}var(--warning){% else %}var(--success){% endif %};">
+                  <i class="bi bi-{{ 'pause-fill' if alert.active else 'play-fill' }}"></i>
+                </button>
+              </form>
+              <!-- Delete -->
+              <form method="POST" action="/alerts/delete" onsubmit="return confirm('Delete this alert?');" style="display:inline;">
+                <input type="hidden" name="alert_id" value="{{ alert.alert_id }}">
+                <button type="submit" class="btn-ghost" style="font-size:12px;padding:5px 10px;color:var(--danger);">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Edit Modal -->
+          <div class="modal fade pfms-modal" id="editAlert{{ alert.alert_id }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Alert Threshold</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/alerts/edit">
+                  <div class="modal-body" style="padding:24px;">
+                    <input type="hidden" name="alert_id" value="{{ alert.alert_id }}">
+                    <label class="pfms-label">New Threshold (₹)</label>
+                    <input type="number" name="threshold" class="pfms-input" value="{{ alert.threshold|int }}" required min="1">
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-accent"><i class="bi bi-check-lg"></i> Update</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:64px 0;">
+          <div style="font-size:56px;margin-bottom:16px;">🔔</div>
+          <div style="font-weight:700;color:var(--text-primary);margin-bottom:8px;">No alerts configured</div>
+          <div style="color:var(--text-secondary);font-size:14px;">Create your first alert to stay on top of your finances</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

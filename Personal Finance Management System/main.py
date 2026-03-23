@@ -2,586 +2,553 @@ import math
 import os
 import random
 import re
+import csv
+import io
 import traceback
 import warnings
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
+
 import bcrypt
 import numpy as np
 import pandas as pd
-import pdfkit
-import pymysql
-from flask import Flask, render_template, make_response
-from flask import request, redirect, flash
-from flask import session
+from flask import Flask, render_template, make_response, request, redirect, flash, session, Response
 from flask_mail import Mail, Message
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 
 import support
 
 warnings.filterwarnings("ignore")
 
-# Database connection setup
-db = pymysql.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="personal_finance_management_system"
-)
-
-# Initialize Flask app, __name__ is passed to tell Flask the location of the app
+# ──────────────────────────────────────────────────────────
+# App & DB Setup
+# ──────────────────────────────────────────────────────────
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  #secret key for the Flask app to secure session data.
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
+# Database URI: use Neon / Postgres on Vercel, SQLite locally
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///finance.db')
+# Fix Heroku/Neon-style "postgres://" → SQLAlchemy prefers "postgresql://"
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-# Helper function to execute queries
-def execute_query(query_type, query, params=None):
-    global cursor
-    try:
-        cursor = db.cursor()  # Create a cursor object
-        cursor.execute(query, params or ())
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-        if query_type == "search":
-            result = cursor.fetchall()
-            cursor.close()
-            return result
-        elif query_type == "insert":
-            db.commit()  # Commit the changes if it is an insert query
-            cursor.close()
-            return
+db = SQLAlchemy(app)
 
-    except pymysql.MySQLError as e:
-        db.rollback()  # Rollback in case of error
-        cursor.close()
-        print(f"Database error: {e}")
-        flash("An error occurred while processing your request.")
-        # Handle or log the error as needed
-        return None
-    except Exception as e:
-        cursor.close()
-        print(f"Unexpected error: {e}")
-        flash("An unexpected error occurred.")
-        # Handle or log the error as needed
-        return None
+# ──────────────────────────────────────────────────────────
+# Flask-Mail configuration (env vars, no hardcoded secrets)
+# ──────────────────────────────────────────────────────────
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'change-me-in-production')
+app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_DEBUG'] = False
+mail = Mail(app)
 
+# ──────────────────────────────────────────────────────────
+# ORM Models  (column names match existing DB schema)
+# ──────────────────────────────────────────────────────────
+class UserLogin(db.Model):
+    __tablename__ = 'user_login'
+    user_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    username  = db.Column(db.String(100), nullable=False)
+    email     = db.Column(db.String(150), unique=True, nullable=False)
+    password  = db.Column(db.String(300), nullable=False)
 
-# User alert logic
+class UserExpense(db.Model):
+    __tablename__ = 'user_expenses'
+    id           = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id      = db.Column(db.Integer, db.ForeignKey('user_login.user_id'), nullable=False)
+    pdate        = db.Column(db.Date, nullable=False)
+    expense      = db.Column(db.String(50), nullable=False)   # Earning / Spend / Investment
+    amount       = db.Column(db.Float, nullable=False)
+    pdescription = db.Column(db.String(255), default='')
+
+class UserAlert(db.Model):
+    __tablename__ = 'user_alerts'
+    alert_id   = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('user_login.user_id'), nullable=False)
+    alert_type = db.Column(db.String(50), nullable=False)
+    threshold  = db.Column(db.Float, nullable=False)
+    active     = db.Column(db.Boolean, default=True)
+
+# Create tables if they don't exist yet (idempotent)
+with app.app_context():
+    db.create_all()
+
+# ──────────────────────────────────────────────────────────
+# Helper: check user alerts
+# ──────────────────────────────────────────────────────────
 def check_alerts(user_id):
-    # Use parameterized queries to prevent SQL injection
-    query = "SELECT alert_type, threshold, alert_id, active FROM user_alerts WHERE user_id = %s"
-    alerts = execute_query("search", query, (user_id,))
-
-    if not alerts:
-        return None
-
+    alerts = UserAlert.query.filter_by(user_id=user_id).all()
     messages = []
-    for alert_type, threshold, alert_id, active in alerts:
-        if active:  # Check if the alert is active
-            if alert_type == "expense":
-                # Query total expenses
-                query = "SELECT SUM(amount) FROM user_expenses WHERE user_id = %s"
-                total_expense = execute_query("search", query, (user_id,))[0][0] or 0
-                if total_expense > threshold:
-                    messages.append(f"Alert: Your total expenses have exceeded ₹{threshold}.")
-            elif alert_type == "income":
-                # Query total income
-                query = "SELECT SUM(income) FROM income WHERE user_id = %s"
-                total_income = execute_query("search", query, (user_id,))[0][0] or 0
-                if total_income < threshold:
-                    messages.append(f"Alert: Your total income is below ₹{threshold}.")
-
+    for alert in alerts:
+        if alert.active:
+            if alert.alert_type == 'expense':
+                total = db.session.query(db.func.sum(UserExpense.amount))\
+                    .filter_by(user_id=user_id, expense='Spend').scalar() or 0
+                if total > alert.threshold:
+                    messages.append(f"⚠️ Your total expenses (₹{total:,.0f}) have exceeded your alert threshold of ₹{alert.threshold:,.0f}.")
+            elif alert.alert_type == 'income':
+                total = db.session.query(db.func.sum(UserExpense.amount))\
+                    .filter_by(user_id=user_id, expense='Earning').scalar() or 0
+                if total < alert.threshold:
+                    messages.append(f"⚠️ Your total income (₹{total:,.0f}) is below your alert threshold of ₹{alert.threshold:,.0f}.")
     return messages
 
+# ──────────────────────────────────────────────────────────
+# Tax helpers (unchanged logic)
+# ──────────────────────────────────────────────────────────
+MAX_DEDUCTIONS = {'old': 150000, 'new': 0}
 
+def calculate_old_regime_tax(income):
+    if income <= 250000:   return 0
+    elif income <= 500000: return (income - 250000) * 0.05
+    elif income <= 1000000:return (250000 * 0.05) + ((income - 500000) * 0.20)
+    else:                  return (250000 * 0.05) + (500000 * 0.20) + ((income - 1000000) * 0.30)
+
+def calculate_new_regime_tax(income):
+    if income <= 250000:   return 0
+    elif income <= 500000: return (income - 250000) * 0.05
+    elif income <= 750000: return 12500 + (income - 500000) * 0.10
+    elif income <= 1000000:return 37500 + (income - 750000) * 0.15
+    elif income <= 1250000:return 75000 + (income - 1000000) * 0.20
+    elif income <= 1500000:return 125000 + (income - 1250000) * 0.25
+    else:                  return 187500 + (income - 1500000) * 0.30
+
+def calculate_advance_tax(total_tax):
+    june  = total_tax * 0.15
+    sept  = total_tax * 0.45 - june
+    dec   = total_tax * 0.75 - (june + sept)
+    march = total_tax - (june + sept + dec)
+    remaining = total_tax - (june + sept + dec + march)
+    return june, sept, dec, march, remaining
+
+# ──────────────────────────────────────────────────────────
+# Auth Routes
+# ──────────────────────────────────────────────────────────
 @app.route('/')
 def login():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(minutes=25)
     if 'user_id' in session:
-        flash("Already a user is logged-in!")
+        flash("You are already logged in.", "info")
         return redirect('/home')
-    else:
-        return render_template("login.html")
+    return render_template('login.html')
 
 
-@app.route('/login_validation', methods=['POST', 'GET'])
+@app.route('/login_validation', methods=['POST'])
 def login_validation():
-    if 'user_id' not in session:
-        email = request.form.get('email').strip()
-        passwd = request.form.get('password').strip()
-        query = "SELECT * FROM user_login WHERE email = %s"
-        users = execute_query("search", query, (email,))
-
-        if users:
-            stored_password = users[0][3]  # Assuming the password is in the 4th column (hashed password)
-            print(passwd.encode('utf-8'))
-            print(stored_password.encode('utf-8'))
-            if bcrypt.checkpw(passwd.encode('utf-8'), stored_password.encode('utf-8')):
-                session['user_id'] = users[0][0]
-                return redirect('/home')
-            else:
-                flash("Incorrect password. Please try again.")
-                return redirect('/')
-        else:
-            flash("No account found with this email address.")
-            return redirect('/')
-    else:
-        flash("Already a user is logged-in!")
+    if 'user_id' in session:
         return redirect('/home')
-
-
-# Flask-Mail configuration
-
-app.config['SECRET_KEY'] = 'qwertyuiop'
-app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your_email@gmail.com'
-app.config['MAIL_PASSWORD'] = ''
-app.config['MAIL_DEBUG'] = True
-mail = Mail(app)
-
-
-# Password reset route using OTP
-@app.route('/reset', methods=['POST'])
-def reset():
-    if 'user_id' not in session:
-        email = request.form.get('femail')
-        userdata = execute_query('search', f"SELECT * FROM user_login WHERE email = '{email}'")
-        if userdata:
-            # Generate a 6-digit OTP
-            otp = random.randint(100000, 999999)
-
-            # Store OTP and email in session for later validation
-            session['reset_email'] = email
-            session['otp'] = otp
-
-            # Send OTP via email
-            msg = Message("Password Reset OTP",
-                          sender="noreply@app.com",
-                          recipients=[email])
-            msg.body = f"Your OTP for password reset is: {otp}. This OTP will expire in 10 minutes."
-            mail.send(msg)
-
-            flash("An OTP has been sent to your email.")
-            return redirect('/verify_otp')  # Redirect to OTP verification page
-        else:
-            flash("Invalid email address!")
-            return redirect('/')
-    else:
+    email  = request.form.get('email', '').strip()
+    passwd = request.form.get('password', '').strip()
+    user   = UserLogin.query.filter_by(email=email).first()
+    if user and bcrypt.checkpw(passwd.encode('utf-8'), user.password.encode('utf-8')):
+        session['user_id'] = user.user_id
+        flash(f"Welcome back, {user.username}! 👋", "success")
         return redirect('/home')
-
-
-# Route for verifying OTP and resetting password
-@app.route('/verify_otp', methods=['GET', 'POST'])
-def verify_otp():
-    if request.method == 'POST':
-        entered_otp = request.form.get('otp')
-        new_password = request.form.get('new_password')
-
-        if 'otp' in session and 'reset_email' in session:
-            if int(entered_otp) == session['otp']:
-                email = session['reset_email']
-
-                # Hash the new password before updating
-                hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-                try:
-                    query = "UPDATE user_login SET password = %s WHERE email = %s"
-                    execute_query('insert', query, (hashed_password, email))
-
-                    session.pop('otp', None)
-                    session.pop('reset_email', None)
-
-                    flash("Your password has been reset successfully!")
-                    return redirect('/')
-                except:
-                    flash("Something went wrong while resetting the password!")
-                    return redirect('/verify_otp')
-            else:
-                flash('Invalid OTP. Please try again.')
-                return redirect('/verify_otp')
-        else:
-            flash('Session expired or invalid. Please try again.')
-            return redirect('/reset')
-
-    return render_template('verify_otp.html')
+    flash("Invalid email or password. Please try again.", "danger")
+    return redirect('/')
 
 
 @app.route('/register')
 def register():
     if 'user_id' in session:
-        flash("Already a user is logged-in!")
         return redirect('/home')
-    else:
-        return render_template("register.html")
+    return render_template('register.html')
 
 
 @app.route('/registration', methods=['POST'])
 def registration():
-    if 'user_id' not in session:
-        name = request.form.get('name').strip()
-        email = request.form.get('email').strip()
-        passwd = request.form.get('password').strip()
-
-        if not name.replace(" ", "").isalpha() or len(name) < 5:
-            flash("Name must be at least 5 characters long and contain only alphabetic characters.")
-            return redirect('/register')
-
-        email_regex = r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-        if not re.match(email_regex, email):
-            flash("Invalid email format. Please enter a valid email address.")
-            return redirect('/register')
-
-        if len(passwd) < 5:
-            flash("Password must be at least 5 characters long.")
-            return redirect('/register')
-
-        existing_user = execute_query('search', "SELECT * FROM user_login WHERE email = %s", (email,))
-        if existing_user:
-            flash("Email ID already exists, use another email!")
-            return redirect('/register')
-
-        try:
-            hashed_password = bcrypt.hashpw(passwd.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-            query = "INSERT INTO user_login(username, email, password) VALUES(%s, %s, %s)"
-            execute_query('insert', query, (name, email, hashed_password))
-
-            user = execute_query('search', "SELECT * FROM user_login WHERE email = %s", (email,))
-            session['user_id'] = user[0][0]
-
-            flash("Successfully Registered!")
-            return redirect('/home')
-        except Exception as e:
-            flash(f"An error occurred during registration: {e}")
-            return redirect('/register')
-    else:
-        flash("Already a user is logged-in!")
+    if 'user_id' in session:
         return redirect('/home')
+    name   = request.form.get('name', '').strip()
+    email  = request.form.get('email', '').strip()
+    passwd = request.form.get('password', '').strip()
+
+    if not name.replace(' ', '').isalpha() or len(name) < 5:
+        flash("Name must be at least 5 characters and contain only letters.", "danger")
+        return redirect('/register')
+    if not re.match(r'^\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', email):
+        flash("Invalid email format.", "danger")
+        return redirect('/register')
+    if len(passwd) < 5:
+        flash("Password must be at least 5 characters.", "danger")
+        return redirect('/register')
+    if UserLogin.query.filter_by(email=email).first():
+        flash("This email is already registered.", "danger")
+        return redirect('/register')
+
+    hashed = bcrypt.hashpw(passwd.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    new_user = UserLogin(username=name, email=email, password=hashed)
+    db.session.add(new_user)
+    db.session.commit()
+    session['user_id'] = new_user.user_id
+    flash("Account created successfully! Welcome aboard 🎉", "success")
+    return redirect('/home')
 
 
-@app.route('/contact')
-def contact():
-    return render_template("contact.html")
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("You have been logged out.", "info")
+    return redirect('/')
+
+# ──────────────────────────────────────────────────────────
+# Password Reset (OTP)
+# ──────────────────────────────────────────────────────────
+@app.route('/reset', methods=['POST'])
+def reset():
+    if 'user_id' in session:
+        return redirect('/home')
+    email    = request.form.get('femail', '').strip()
+    userdata = UserLogin.query.filter_by(email=email).first()
+    if userdata:
+        otp = random.randint(100000, 999999)
+        session['reset_email'] = email
+        session['otp']         = otp
+        try:
+            msg = Message("Password Reset OTP", sender="noreply@pfms.app", recipients=[email])
+            msg.body = f"Your OTP for password reset is: {otp}. It expires in 10 minutes."
+            mail.send(msg)
+            flash("An OTP has been sent to your email.", "success")
+        except Exception:
+            flash("Could not send email. Please check mail configuration.", "danger")
+        return redirect('/verify_otp')
+    flash("No account found with this email.", "danger")
+    return redirect('/')
 
 
-@app.route('/feedback', methods=['POST'])
-def feedback():
-    # Get form data
-    name = request.form.get('name')
-    email = request.form.get('email')
-    phone = request.form.get('phone')
-    subject = request.form.get('sub')
-    message_content = request.form.get('message')
+@app.route('/verify_otp', methods=['GET', 'POST'])
+def verify_otp():
+    if request.method == 'POST':
+        entered_otp  = request.form.get('otp', '')
+        new_password = request.form.get('new_password', '')
+        if 'otp' in session and 'reset_email' in session:
+            if str(session['otp']) == entered_otp:
+                email  = session['reset_email']
+                hashed = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                user   = UserLogin.query.filter_by(email=email).first()
+                if user:
+                    user.password = hashed
+                    db.session.commit()
+                    session.pop('otp', None)
+                    session.pop('reset_email', None)
+                    flash("Password reset successfully! Please log in.", "success")
+                    return redirect('/')
+            else:
+                flash("Invalid OTP. Please try again.", "danger")
+                return redirect('/verify_otp')
+        else:
+            flash("Session expired. Please try again.", "danger")
+            return redirect('/')
+    return render_template('verify_otp.html')
 
-    # Define the admin's email
-    admin_email = 'email@example.com'  # Replace with actual admin email
-
-    # Send feedback via email
-    msg = Message(f"New Contact Us Message: {subject}",
-                  sender="noreply@app.com",
-                  recipients=[admin_email])  # Send to admin
-    msg.body = f"""
-    New message from: {name}
-    Email: {email}
-    Phone: {phone}
-
-    Message:
-    {message_content}
-    """
-    mail.send(msg)
-
-    flash("Your message has been sent successfully!")
-    return redirect('/contact')  # Redirect back to the contact page
-
-
+# ──────────────────────────────────────────────────────────
+# Home / Dashboard
+# ──────────────────────────────────────────────────────────
 @app.route('/home')
 def home():
-    if 'user_id' in session:
-        # Fetch user data
-        query = f"SELECT * FROM user_login WHERE user_id = {session['user_id']}"
-        userdata = execute_query("search", query)
+    if 'user_id' not in session:
+        return redirect('/')
+    user_id  = session['user_id']
+    userdata = UserLogin.query.get(user_id)
 
-        # Fetch user expenses and create dataframe
-        table_query = f"SELECT * FROM user_expenses WHERE user_id = {session['user_id']} ORDER BY pdate DESC"
-        table_data = execute_query("search", table_query)
-        df = pd.DataFrame(table_data, columns=['#', 'User_Id', 'Date', 'Expense', 'Amount', 'Note'])
+    # Fetch all expenses for this user
+    rows = UserExpense.query.filter_by(user_id=user_id).order_by(UserExpense.pdate.desc()).all()
+    table_data = [(r.id, r.user_id, r.pdate, r.expense, r.amount, r.pdescription) for r in rows]
 
-        df = support.generate_df(df)
+    df = pd.DataFrame(table_data, columns=['#', 'User_Id', 'Date', 'Expense', 'Amount', 'Note'])
+    df = support.generate_df(df) if not df.empty else df
 
-        # Initialize earnings, spend, invest, and savings
-        earning, spend, invest, saving = 0, 0, 0, 0
+    earning = spend = invest = saving = 0
+    spending_pie_data = earning_pie_data = None
+    monthly_data = []
 
-        if not df.empty:
-            try:
-                # Calculate earnings, spend, invest, and savings using helper function
-                earning, spend, invest, saving = support.top_tiles(df)
-
-                # Calculate total income and total expenses
-                total_income = df[df['Expense'] == 'Earning']['Amount'].sum()
-                total_spend = df[df['Expense'] == 'Spend']['Amount'].sum()
-                total_invest = df[df['Expense'] == 'Investment']['Amount'].sum()
-                total_expenses = total_spend + total_invest
-                saving = total_income - total_expenses
-
-                # Flash a warning if expenses exceed income
-                if total_expenses > total_income:
-                    flash("Warning: Your total expenses exceed your total income!")
-            except Exception as e:
-                flash(f"Error calculating financial data: {str(e)}")
-                earning, spend, invest, saving = 0, 0, 0, 0
-
-        # Prepare data for category-wise pie charts (Spending and Earning)
+    if not df.empty:
         try:
-            df_spending = df[df['Expense'] == 'Spend']
-            if not df_spending.empty and 'Note' in df_spending.columns:
-                spending_category_data = df_spending.groupby('Note')['Amount'].sum().reset_index()
-                spending_pie_data = {
-                    'labels': spending_category_data['Note'].tolist(),
-                    'datasets': [{
-                        'data': spending_category_data['Amount'].tolist(),
-                        'backgroundColor': ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
-                    }]
-                }
-            else:
-                spending_pie_data = None
+            # Calculate totals directly — reliable and pandas-version independent
+            total_income   = float(df[df['Expense'] == 'Earning']['Amount'].sum())
+            total_spend    = float(df[df['Expense'] == 'Spend']['Amount'].sum())
+            total_invest   = float(df[df['Expense'] == 'Investment']['Amount'].sum())
+            total_expenses = total_spend + total_invest
+            saving_val     = total_income - total_expenses
 
-            df_earning = df[df['Expense'] == 'Earning']
-            if not df_earning.empty and 'Note' in df_earning.columns:
-                earning_category_data = df_earning.groupby('Note')['Amount'].sum().reset_index()
-                earning_pie_data = {
-                    'labels': earning_category_data['Note'].tolist(),
-                    'datasets': [{
-                        'data': earning_category_data['Amount'].tolist(),
-                        'backgroundColor': ['#36A2EB', '#FFCE56', '#FF6384', '#4BC0C0', '#9966FF']
-                    }]
-                }
-            else:
-                earning_pie_data = None
+            # Format for KPI card display (e.g. 1500 → "1.5K")
+            earning = support.num2MB(total_income)
+            spend   = support.num2MB(total_spend)
+            invest  = support.num2MB(total_invest)
+            saving  = support.num2MB(abs(saving_val)) if saving_val >= 0 else f"-{support.num2MB(abs(saving_val))}"
+
+            if total_expenses > total_income:
+                flash("⚠️ Warning: Your total expenses exceed your total income!", "warning")
         except Exception as e:
-            flash(f"Error processing data for pie charts: {str(e)}")
-            spending_pie_data, earning_pie_data = None, None
+            flash(f"Error calculating finances: {e}", "danger")
 
-        # Monthly data aggregation logic
+        # Pie chart data
+        try:
+            df_sp = df[df['Expense'] == 'Spend']
+            if not df_sp.empty:
+                grp = df_sp.groupby('Note')['Amount'].sum().reset_index()
+                colors = ['#4F46E5','#7C3AED','#DB2777','#DC2626','#D97706','#059669','#0891B2','#0284C7']
+                spending_pie_data = {
+                    'labels': grp['Note'].tolist(),
+                    'datasets': [{'data': grp['Amount'].tolist(),
+                                  'backgroundColor': colors[:len(grp)],
+                                  'borderWidth': 2}]
+                }
+            df_ea = df[df['Expense'] == 'Earning']
+            if not df_ea.empty:
+                grp2 = df_ea.groupby('Note')['Amount'].sum().reset_index()
+                colors2 = ['#059669','#10B981','#34D399','#6EE7B7','#A7F3D0','#D1FAE5']
+                earning_pie_data = {
+                    'labels': grp2['Note'].tolist(),
+                    'datasets': [{'data': grp2['Amount'].tolist(),
+                                  'backgroundColor': colors2[:len(grp2)],
+                                  'borderWidth': 2}]
+                }
+        except Exception as e:
+            flash(f"Chart error: {e}", "danger")
+
+        # Monthly data
         try:
             df['Date'] = pd.to_datetime(df['Date'])
-            df['Month'] = df['Date'].dt.strftime('%B %Y')
-
-            monthly_data = df.groupby(['Month', 'Expense']).agg({'Amount': 'sum'}).unstack(fill_value=0).reset_index()
-            monthly_data.columns = ['Month', 'Earning' , 'Investment', 'Spend']
-            monthly_data['Saving'] = (monthly_data['Earning'] - monthly_data['Spend']) + monthly_data['Investment']
-            monthly_data = monthly_data.to_dict(orient='records')
-            print(monthly_data)
+            df['Month'] = df['Date'].dt.strftime('%b %Y')
+            monthly = df.groupby(['Month', 'Expense'])['Amount'].sum().unstack(fill_value=0).reset_index()
+            for col in ['Earning', 'Spend', 'Investment']:
+                if col not in monthly.columns:
+                    monthly[col] = 0
+            monthly['Saving'] = monthly['Earning'] - monthly['Spend'] - monthly['Investment']
+            monthly_data = monthly.to_dict(orient='records')
         except Exception as e:
-            flash(f"Error calculating monthly data: {str(e)}")
-            monthly_data = []
+            flash(f"Monthly data error: {e}", "danger")
 
-        # Check and display user alerts
-        alerts = check_alerts(session['user_id'])
-        if alerts:
-            for alert in alerts:
-                flash(alert)
+    # User alerts
+    alerts = check_alerts(user_id)
+    for a in alerts:
+        flash(a, "warning")
 
-        # Render home.html with the required data
-        return render_template('home.html',
-                               user_name=userdata[0][1],
-                               earning=earning,
-                               spend=spend,
-                               invest=invest,
-                               saving=saving,
-                               table_data=table_data[0:5],  # Display first 5 records
-                               pie_data1=spending_pie_data,
-                               pie_data2=earning_pie_data,
-                               monthly_data=monthly_data)  # Pass monthly data to the template
-    else:
-        return redirect('/')
+    return render_template('home.html',
+                           user_name=userdata.username,
+                           earning=earning,
+                           spend=spend,
+                           invest=invest,
+                           saving=saving,
+                           # raw numbers for charts
+                           total_income=total_income if not df.empty else 0,
+                           total_spend=total_spend if not df.empty else 0,
+                           total_invest=total_invest if not df.empty else 0,
+                           table_data=table_data[:5],
+                           pie_data1=spending_pie_data,
+                           pie_data2=earning_pie_data,
+                           monthly_data=monthly_data,
+                           df_size=len(table_data))
 
 
 @app.route('/home/add_expense', methods=['POST'])
 def add_expense():
-    if 'user_id' in session:
-        user_id = session['user_id']
-        if request.method == 'POST':
-            date = request.form.get('e_date')
-            expense = request.form.get('e_type')
-            amount = request.form.get('amount')
-
-            # Get selected note from the dropdown
-            selected_note = request.form.get('notes_dropdown')
-
-            # Get custom note entered by the user
-            custom_note = request.form.get('custom_note')
-
-            # Determine which note to use (custom note takes precedence if provided)
-            notes = custom_note if custom_note.strip() != "" else selected_note
-
-            if datetime.strptime(date, '%Y-%m-%d') > datetime.now():
-                flash("Date cannot be in the future.")
-                return redirect("/home")
-
-            try:
-                query = f"INSERT INTO user_expenses (user_id, pdate, expense, amount, pdescription) VALUES ({user_id}, '{date}', '{expense}', {amount}, '{notes}')"
-                execute_query('insert', query)
-                flash("Saved!")
-            except Exception as e:
-                flash(f"Something went wrong: {str(e)}")
-                return redirect("/home")
-
-            return redirect('/home')
-    else:
+    if 'user_id' not in session:
         return redirect('/')
+    user_id = session['user_id']
+    date_str = request.form.get('e_date', '')
+    expense  = request.form.get('e_type', '')
+    amount   = request.form.get('amount', 0)
+    notes_dropdown = request.form.get('notes_dropdown', '')
+    custom_note    = request.form.get('custom_note', '').strip()
+    notes = custom_note if custom_note else notes_dropdown
+
+    try:
+        pdate = datetime.strptime(date_str, '%Y-%m-%d')
+        if pdate > datetime.now():
+            flash("Date cannot be in the future.", "warning")
+            return redirect('/home')
+        record = UserExpense(
+            user_id=user_id,
+            pdate=pdate.date(),
+            expense=expense,
+            amount=float(amount),
+            pdescription=notes
+        )
+        db.session.add(record)
+        db.session.commit()
+        flash("Transaction added successfully! ✅", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error saving transaction: {e}", "danger")
+    return redirect('/home')
 
 
+@app.route('/delete_expense/<int:expense_id>', methods=['POST'])
+def delete_expense(expense_id):
+    if 'user_id' not in session:
+        return redirect('/')
+    record = UserExpense.query.get_or_404(expense_id)
+    if record.user_id != session['user_id']:
+        flash("Unauthorized action.", "danger")
+        return redirect('/analysis')
+    db.session.delete(record)
+    db.session.commit()
+    flash("Transaction deleted.", "success")
+    return redirect('/analysis')
+
+
+@app.route('/edit_expense', methods=['POST'])
+def edit_expense():
+    if 'user_id' not in session:
+        return redirect('/')
+    expense_id = request.form.get('expense_id')
+    record = UserExpense.query.get_or_404(expense_id)
+    if record.user_id != session['user_id']:
+        flash("Unauthorized action.", "danger")
+        return redirect('/analysis')
+    try:
+        record.pdate        = datetime.strptime(request.form.get('e_date'), '%Y-%m-%d').date()
+        record.expense      = request.form.get('e_type')
+        record.amount       = float(request.form.get('amount'))
+        record.pdescription = request.form.get('custom_note', '').strip()
+        db.session.commit()
+        flash("Transaction updated successfully! ✅", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error updating: {e}", "danger")
+    return redirect('/analysis')
+
+# ──────────────────────────────────────────────────────────
+# Analysis
+# ──────────────────────────────────────────────────────────
 def get_finance_data(user_id):
-    # Query to get all data for the user
-    query = f"""
-        SELECT id, pdate, expense, amount, COALESCE(pdescription, '') 
-        FROM user_expenses 
-        WHERE user_id = {user_id}
-        ORDER BY pdate
-    """
-    formatted_data = execute_query("search", query)
-
-    # Format data as required
-    formatted_data = [{
-        'date': str(row[1]),  # pdate
-        'expense': row[2],  # expense (either 'earning' or 'spend')
-        'amount': row[3],  # amount
-        'pdescription': row[4]  # pdescription
-    } for row in formatted_data]
-
-    # Split into income and expense data
-    income_data = [row for row in formatted_data if row['expense'] == 'Earning']
-    expense_data = [row for row in formatted_data if row['expense'] == 'Spend']
-
+    rows = UserExpense.query.filter_by(user_id=user_id).order_by(UserExpense.pdate).all()
+    formatted = [{'id': r.id, 'date': str(r.pdate), 'expense': r.expense,
+                  'amount': float(r.amount), 'pdescription': r.pdescription or ''} for r in rows]
+    income_data  = [r for r in formatted if r['expense'] == 'Earning']
+    expense_data = [r for r in formatted if r['expense'] != 'Earning']
     return income_data, expense_data
 
 
 @app.route('/analysis', defaults={'page': 1})
 @app.route('/analysis/page/<int:page>')
 def analysis(page):
-    user_id = session.get('user_id')
-    user_name = session.get('user_name')
-    items_per_page = 10  # Number of items to display per page
+    if 'user_id' not in session:
+        return redirect('/')
+    user_id        = session['user_id']
+    userdata       = UserLogin.query.get(user_id)
+    items_per_page = 10
 
-    # Get filter and sort parameters from request
-    selected_month = request.args.get('month')
-    selected_year = request.args.get('year')
-    sort_column = request.args.get('sort', 'date')
-    sort_direction = request.args.get('direction', 'asc')  # Default sorting is ascending
+    # Filters
+    selected_month  = request.args.get('month')
+    selected_year   = request.args.get('year')
+    selected_type   = request.args.get('expense_type', '')
+    selected_cat    = request.args.get('category', '').strip()
+    start_date_str  = request.args.get('start_date', '')
+    end_date_str    = request.args.get('end_date', '')
+    sort_column     = request.args.get('sort', 'date')
+    sort_direction  = request.args.get('direction', 'desc')
 
     try:
-        # Fetch income and expense data using the provided function
         income_data, expense_data = get_finance_data(user_id)
+        # Combine all for full table
+        all_data = income_data + expense_data
 
-        # Convert the expense and income data to pandas DataFrames for easier manipulation
-        df_income = pd.DataFrame(income_data)
-        df_expense = pd.DataFrame(expense_data)
-        df_expense1 = df_expense.copy()
+        df_all    = pd.DataFrame(all_data) if all_data else pd.DataFrame(
+            columns=['id','date','expense','amount','pdescription'])
+        df_income = pd.DataFrame(income_data) if income_data else pd.DataFrame(
+            columns=['id','date','expense','amount','pdescription'])
+        df_expense = pd.DataFrame(expense_data) if expense_data else pd.DataFrame(
+            columns=['id','date','expense','amount','pdescription'])
 
-        # Ensure that the 'date' columns are in datetime format
-        if 'date' in df_income.columns:
-            df_income['date'] = pd.to_datetime(df_income['date'], errors='coerce')  # Convert, coerce invalids to NaT
-        if 'date' in df_expense.columns:
-            df_expense['date'] = pd.to_datetime(df_expense['date'], errors='coerce')
-            df_expense1['date'] = pd.to_datetime(df_expense1['date'], errors='coerce')  # Convert 'df_expense1' dates as well
+        for df in [df_all, df_income, df_expense]:
+            if 'date' in df.columns and not df.empty:
+                df['date'] = pd.to_datetime(df['date'], errors='coerce')
 
-        # Filter by selected month and year
-        if selected_month or selected_year:
-            if selected_month and selected_year:
-                df_income = df_income[
-                    (df_income['date'].dt.month == int(selected_month)) &
-                    (df_income['date'].dt.year == int(selected_year))
-                ]
-                df_expense = df_expense[
-                    (df_expense['date'].dt.month == int(selected_month)) &
-                    (df_expense['date'].dt.year == int(selected_year))
-                ]
-            elif selected_month:
-                df_income = df_income[df_income['date'].dt.month == int(selected_month)]
-                df_expense = df_expense[df_expense['date'].dt.month == int(selected_month)]
-            elif selected_year:
-                df_income = df_income[df_income['date'].dt.year == int(selected_year)]
-                df_expense = df_expense[df_expense['date'].dt.year == int(selected_year)]
+        # --- Apply filters to df_all for the table ---
+        df_table = df_all.copy()
+        if start_date_str:
+            df_table = df_table[df_table['date'] >= pd.to_datetime(start_date_str)]
+        if end_date_str:
+            df_table = df_table[df_table['date'] <= pd.to_datetime(end_date_str)]
+        if selected_month:
+            df_table  = df_table[df_table['date'].dt.month == int(selected_month)]
+            df_income = df_income[df_income['date'].dt.month == int(selected_month)] if not df_income.empty else df_income
+            df_expense = df_expense[df_expense['date'].dt.month == int(selected_month)] if not df_expense.empty else df_expense
+        if selected_year:
+            df_table  = df_table[df_table['date'].dt.year == int(selected_year)]
+            df_income = df_income[df_income['date'].dt.year == int(selected_year)] if not df_income.empty else df_income
+            df_expense = df_expense[df_expense['date'].dt.year == int(selected_year)] if not df_expense.empty else df_expense
+        if selected_type:
+            df_table = df_table[df_table['expense'] == selected_type]
+        if selected_cat:
+            df_table = df_table[df_table['pdescription'].str.contains(selected_cat, case=False, na=False)]
 
-
-        # Convert pandas int64 to native Python float
-        df_expense['amount'] = df_expense['amount'].astype(float)
-        df_income['amount'] = df_income['amount'].astype(float)
-
-        # Calculate total income and expenses
-        total_income = df_income['amount'].sum() if not df_income.empty else 0
+        # Totals from filtered income/expense
+        total_income   = df_income['amount'].sum() if not df_income.empty else 0
         total_expenses = df_expense['amount'].sum() if not df_expense.empty else 0
-        net_savings = total_income - total_expenses
-        goal_progress = (net_savings / total_income) * 100 if total_income > 0 else 0
+        net_savings    = total_income - total_expenses
+        goal_progress  = round((net_savings / total_income) * 100, 1) if total_income > 0 else 0
 
-        # Prepare pie chart data for Income vs Expenses
+        # Chart data
         pie_data = {
             'labels': ['Income', 'Expenses'],
-            'datasets': [{
-                'data': [total_income, total_expenses],
-                'backgroundColor': ['#36A2EB', '#FF6384']
-            }]
+            'datasets': [{'data': [float(total_income), float(total_expenses)],
+                          'backgroundColor': ['#10B981', '#EF4444'], 'borderWidth': 0}]
         }
 
-        # Prepare data for stack bar chart (expenses by category)
+        stack_bar_data = None
         if not df_expense.empty and 'pdescription' in df_expense.columns:
-            pdescription_expenses = df_expense.groupby('pdescription')['amount'].sum().reset_index()
+            grp = df_expense.groupby('pdescription')['amount'].sum().reset_index()
+            colors = ['#4F46E5','#7C3AED','#DB2777','#DC2626','#D97706','#059669','#0891B2','#0284C7',
+                      '#6366F1','#8B5CF6','#EC4899','#F43F5E','#F59E0B','#34D399','#22D3EE','#38BDF8']
             stack_bar_data = {
-                'labels': pdescription_expenses['pdescription'].tolist(),
-                'datasets': [{
-                    'label': 'Expenses by Category',
-                    'data': pdescription_expenses['amount'].tolist(),
-                    'backgroundColor': '#FF9F40'
-                }]
+                'labels': grp['pdescription'].tolist(),
+                'datasets': [{'label': 'Expenses by Category',
+                              'data': grp['amount'].tolist(),
+                              'backgroundColor': colors[:len(grp)]}]
             }
-        else:
-            stack_bar_data = None
 
-        # Prepare income trend line chart data
-        if not df_income.empty and 'date' in df_income.columns:
-            df_income = df_income.sort_values('date')
+        line_graph_data = None
+        if not df_income.empty:
+            dfi = df_income.sort_values('date')
             line_graph_data = {
-                'labels': df_income['date'].dt.strftime('%Y-%m-%d').tolist(),
-                'datasets': [{
-                    'label': 'Income Over Time',
-                    'data': df_income['amount'].tolist(),
-                    'borderColor': '#4BC0C0',
-                    'fill': False
-                }]
+                'labels': dfi['date'].dt.strftime('%Y-%m-%d').tolist(),
+                'datasets': [{'label': 'Income', 'data': dfi['amount'].tolist(),
+                              'borderColor': '#10B981', 'backgroundColor': 'rgba(16,185,129,0.1)',
+                              'fill': True, 'tension': 0.4}]
             }
-        else:
-            line_graph_data = None
 
-        # Prepare expense trend line chart data
-        if not df_expense.empty and 'date' in df_expense.columns:
-            df_expense = df_expense.sort_values('date')
+        expense_trend_data = None
+        if not df_expense.empty:
+            dfe = df_expense.sort_values('date')
             expense_trend_data = {
-                'labels': df_expense['date'].dt.strftime('%Y-%m-%d').tolist(),
-                'datasets': [{
-                    'label': 'Expenses Over Time',
-                    'data': df_expense['amount'].tolist(),
-                    'borderColor': '#FF6384',
-                    'fill': False
-                }]
+                'labels': dfe['date'].dt.strftime('%Y-%m-%d').tolist(),
+                'datasets': [{'label': 'Expenses', 'data': dfe['amount'].tolist(),
+                              'borderColor': '#EF4444', 'backgroundColor': 'rgba(239,68,68,0.1)',
+                              'fill': True, 'tension': 0.4}]
             }
-        else:
-            expense_trend_data = None
 
-            # Apply sorting
-        if sort_column in ['date', 'pdescription', 'amount']:
-            df_expense = df_expense.sort_values(by=sort_column, ascending=(sort_direction == 'asc'))
+        # Sort table
+        if sort_column in ['date', 'pdescription', 'amount', 'expense'] and not df_table.empty:
+            df_table = df_table.sort_values(by=sort_column, ascending=(sort_direction == 'asc'))
 
-        # Pagination for transactions table
-        total_items = len(df_expense)
-        total_pages = math.ceil(total_items / items_per_page)
-        paginated_expenses = df_expense.iloc[(page - 1) * items_per_page:page * items_per_page].to_dict(orient='records')
+        # Format date for display
+        if not df_table.empty:
+            df_table['date'] = df_table['date'].dt.strftime('%Y-%m-%d')
 
-        # Prepare data for month and year filters
-        months = list(range(1, 13))  # January to December
-        years = sorted(df_expense1['date'].dt.year.dropna().unique()) if not df_expense1.empty else []
+        # Years for filter dropdown
+        years = []
+        if not df_all.empty:
+            years = sorted(df_all['date'].dt.year.dropna().unique().tolist())
+
+        # Pagination
+        total_items = len(df_table)
+        total_pages = max(1, math.ceil(total_items / items_per_page))
+        paginated   = df_table.iloc[(page - 1) * items_per_page: page * items_per_page].to_dict(orient='records')
 
         return render_template('analysis.html',
-                               user_name=user_name,
+                               user_name=userdata.username,
                                total_income=total_income,
                                total_expenses=total_expenses,
                                net_savings=net_savings,
@@ -590,69 +557,85 @@ def analysis(page):
                                stack_bar_data=stack_bar_data,
                                line_graph_data=line_graph_data,
                                expense_trend_data=expense_trend_data,
-                               table_data=paginated_expenses,
+                               table_data=paginated,
                                current_page=page,
                                total_pages=total_pages,
                                df_size=total_items,
-                               months=months,
+                               months=list(range(1, 13)),
                                years=years,
                                selected_month=selected_month,
                                selected_year=selected_year,
+                               selected_type=selected_type,
+                               selected_cat=selected_cat,
+                               start_date=start_date_str,
+                               end_date=end_date_str,
                                per_page=items_per_page,
                                sort_column=sort_column,
                                sort_direction=sort_direction,
                                page=page)
-
     except Exception as e:
-        print(f"Error during analysis: {e}")
         print(traceback.format_exc())
-        return "An error occurred during analysis", 500
+        flash(f"Analysis error: {e}", "danger")
+        return redirect('/home')
 
+# ──────────────────────────────────────────────────────────
+# CSV Export
+# ──────────────────────────────────────────────────────────
+@app.route('/export_csv')
+def export_csv():
+    if 'user_id' not in session:
+        return redirect('/')
+    rows = UserExpense.query.filter_by(user_id=session['user_id']).order_by(UserExpense.pdate.desc()).all()
 
+    def generate():
+        si = io.StringIO()
+        writer = csv.writer(si)
+        writer.writerow(['#', 'Date', 'Type', 'Amount (₹)', 'Description'])
+        for i, r in enumerate(rows, 1):
+            writer.writerow([i, r.pdate, r.expense, r.amount, r.pdescription])
+            yield si.getvalue()
+            si.seek(0); si.truncate(0)
 
+    filename = f"transactions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(generate(),
+                    mimetype='text/csv',
+                    headers={"Content-Disposition": f"attachment; filename={filename}"})
+
+# ──────────────────────────────────────────────────────────
+# Alerts
+# ──────────────────────────────────────────────────────────
 @app.route('/alerts', methods=['GET', 'POST'])
 def alerts():
     if 'user_id' not in session:
         return redirect('/')
-
     user_id = session['user_id']
-
     if request.method == 'POST':
         alert_type = request.form.get('alert_type')
-        threshold = request.form.get('threshold')
-
-        query = f"INSERT INTO user_alerts (user_id, alert_type, threshold) VALUES ({user_id}, '{alert_type}', {threshold})"
+        threshold  = request.form.get('threshold')
         try:
-            execute_query('insert', query)
-            flash("Alert has been set successfully!")
+            new_alert = UserAlert(user_id=user_id, alert_type=alert_type, threshold=float(threshold))
+            db.session.add(new_alert)
+            db.session.commit()
+            flash("Alert created successfully! 🔔", "success")
         except Exception as e:
-            flash(f"An error occurred: {e}")
+            db.session.rollback()
+            flash(f"Error: {e}", "danger")
         return redirect('/alerts')
-
-    # Fetch existing alerts
-    query = f"SELECT alert_type, threshold, alert_id FROM user_alerts WHERE user_id = {user_id}"
-    alerts = execute_query("search", query)
-
-    # Ensure alerts is not None
-    if alerts is None:
-        alerts = []
-
-    return render_template("alerts.html", alerts=alerts)
+    all_alerts = UserAlert.query.filter_by(user_id=user_id).all()
+    return render_template('alerts.html', alerts=all_alerts)
 
 
 @app.route('/alerts/delete', methods=['POST'])
 def delete_alert():
     if 'user_id' not in session:
         return redirect('/')
-
-    alert_id = request.form.get('alert_id')
-    query = f"DELETE FROM user_alerts WHERE alert_id = {alert_id}"
-    try:
-        execute_query('insert', query)
-        flash("Alert has been deleted.")
-    except Exception as e:
-        flash(f"An error occurred: {e}")
-
+    alert = UserAlert.query.get_or_404(request.form.get('alert_id'))
+    if alert.user_id != session['user_id']:
+        flash("Unauthorized.", "danger")
+        return redirect('/alerts')
+    db.session.delete(alert)
+    db.session.commit()
+    flash("Alert deleted.", "success")
     return redirect('/alerts')
 
 
@@ -660,17 +643,13 @@ def delete_alert():
 def edit_alert():
     if 'user_id' not in session:
         return redirect('/')
-
-    alert_id = request.form.get('alert_id')
-    threshold = request.form.get('threshold')
-
-    query = f"UPDATE user_alerts SET threshold = {threshold} WHERE alert_id = {alert_id}"
-    try:
-        execute_query('insert', query)
-        flash("Alert has been updated.")
-    except Exception as e:
-        flash(f"An error occurred: {e}")
-
+    alert = UserAlert.query.get_or_404(request.form.get('alert_id'))
+    if alert.user_id != session['user_id']:
+        flash("Unauthorized.", "danger")
+        return redirect('/alerts')
+    alert.threshold = float(request.form.get('threshold'))
+    db.session.commit()
+    flash("Alert updated successfully.", "success")
     return redirect('/alerts')
 
 
@@ -678,62 +657,37 @@ def edit_alert():
 def toggle_alert():
     if 'user_id' not in session:
         return redirect('/')
-
-    alert_id = request.form.get('alert_id')
-
-    # Check current status
-    query = f"SELECT active FROM user_alerts WHERE alert_id = {alert_id}"
-    result = execute_query('search', query)
-    current_status = result[0][0]
-
-    # Toggle the status
-    new_status = not current_status
-    query = f"UPDATE user_alerts SET active = {new_status} WHERE alert_id = {alert_id}"
-
-    try:
-        execute_query('insert', query)
-        status = "activated" if new_status else "deactivated"
-        flash(f"Alert has been {status}.")
-    except Exception as e:
-        flash(f"An error occurred: {e}")
-
+    alert = UserAlert.query.get_or_404(request.form.get('alert_id'))
+    if alert.user_id != session['user_id']:
+        flash("Unauthorized.", "danger")
+        return redirect('/alerts')
+    alert.active = not alert.active
+    db.session.commit()
+    status = "activated" if alert.active else "deactivated"
+    flash(f"Alert {status}.", "info")
     return redirect('/alerts')
 
-
+# ──────────────────────────────────────────────────────────
+# Tax Calculator
+# ──────────────────────────────────────────────────────────
 @app.route('/calculate_tax', methods=['GET', 'POST'])
 def calculate_tax():
-    # Define maximum deductions for each regime
-    MAX_DEDUCTIONS = {
-        'old': 150000,  # Example limit for old regime
-        'new': 0  # No deductions allowed for new regime
-    }
-
     if request.method == 'POST':
-        # Get the user inputs from the form
-        total_income = float(request.form.get('income', 0))
+        total_income   = float(request.form.get('income', 0))
         total_expenses = float(request.form.get('expenses', 0))
-        tax_regime = request.form.get('regime', 'new')  # Get the selected regime (default is new)
-        session['total_income'] = total_income
+        tax_regime     = request.form.get('regime', 'new')
+        session['total_income']   = total_income
         session['total_expenses'] = total_expenses
-        session['tax_regime'] = tax_regime
+        session['tax_regime']     = tax_regime
 
-        # Check for maximum deduction validation
         max_deduction = MAX_DEDUCTIONS[tax_regime]
         if total_expenses > max_deduction:
-            flash(f'Deduction amount cannot exceed ₹{max_deduction}. Please adjust your deduction.', 'warning')
+            flash(f"Deduction cannot exceed ₹{max_deduction:,.0f} for the {tax_regime} regime.", "warning")
             return render_template('tax_form.html')
 
-        # Calculate tax based on the selected regime
-        if tax_regime == 'new':
-            taxable_income = total_income
-        else:
-            taxable_income = total_income - total_expenses
-
-        tax = calculate_old_regime_tax(taxable_income)
-
-        # Calculate advance tax payments
-        advance_tax_june, advance_tax_sept, advance_tax_dec, advance_tax_march, remaining_tax_due = calculate_advance_tax(
-            tax)
+        taxable_income = total_income if tax_regime == 'new' else total_income - total_expenses
+        tax = calculate_old_regime_tax(taxable_income) if tax_regime == 'old' else calculate_new_regime_tax(taxable_income)
+        june, sept, dec, march, remaining = calculate_advance_tax(tax)
 
         return render_template('tax_calculation.html',
                                total_income=total_income,
@@ -742,183 +696,105 @@ def calculate_tax():
                                total_tax=tax,
                                tax=tax,
                                regime=tax_regime.capitalize(),
-                               advance_tax_june=advance_tax_june,
-                               advance_tax_sept=advance_tax_sept,
-                               advance_tax_dec=advance_tax_dec,
-                               advance_tax_march=advance_tax_march,
-                               remaining_tax_due=remaining_tax_due)
-    else:
-        return render_template('tax_form.html')
-
-
-# # Path to wkhtmltopdf executable (only needed if it's not in your system PATH)
-pdfkit_config = pdfkit.configuration(wkhtmltopdf='C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe')
+                               advance_tax_june=june,
+                               advance_tax_sept=sept,
+                               advance_tax_dec=dec,
+                               advance_tax_march=march,
+                               remaining_tax_due=remaining)
+    return render_template('tax_form.html')
 
 
 @app.route('/download_tax_pdf')
 def download_tax_pdf():
-    total_income = session['total_income']
-    total_expenses = session['total_expenses']
-    tax_regime = session['tax_regime']
-    # Render only the specific div content for the PDF
+    """PDF generation – works locally only (requires wkhtmltopdf). Gracefully fails on Vercel."""
+    try:
+        import pdfkit
+        pdfkit_config = pdfkit.configuration(wkhtmltopdf='C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe')
+        total_income   = session.get('total_income', 0)
+        total_expenses = session.get('total_expenses', 0)
+        tax_regime     = session.get('tax_regime', 'new')
+        taxable_income = total_income if tax_regime == 'new' else total_income - total_expenses
+        tax = calculate_old_regime_tax(taxable_income) if tax_regime == 'old' else calculate_new_regime_tax(taxable_income)
+        june, sept, dec, march, remaining = calculate_advance_tax(tax)
+        rendered_html = render_template('pdf_tax_summary.html',
+                                        total_income=total_income,
+                                        total_expenses=total_expenses,
+                                        taxable_income=taxable_income,
+                                        total_tax=tax, tax=tax,
+                                        regime=tax_regime.capitalize(),
+                                        advance_tax_june=june, advance_tax_sept=sept,
+                                        advance_tax_dec=dec, advance_tax_march=march,
+                                        remaining_tax_due=remaining)
+        options = {'no-stop-slow-scripts': '', 'disable-local-file-access': ''}
+        pdf = pdfkit.from_string(rendered_html, False, configuration=pdfkit_config, options=options)
+        response = make_response(pdf)
+        response.headers['Content-Type']        = 'application/pdf'
+        response.headers['Content-Disposition'] = 'attachment; filename=tax_summary.pdf'
+        return response
+    except Exception as e:
+        flash(f"PDF generation failed. This feature requires wkhtmltopdf installed locally. Error: {e}", "warning")
+        return redirect('/calculate_tax')
 
-    if tax_regime == 'new':
-        taxable_income = total_income
-    else:
-        taxable_income = total_income - total_expenses
-
-    tax = calculate_old_regime_tax(taxable_income)
-
-    # Calculate advance tax payments
-    advance_tax_june, advance_tax_sept, advance_tax_dec, advance_tax_march, remaining_tax_due = calculate_advance_tax(
-        tax)
-
-    rendered_html = render_template('pdf_tax_summary.html',  # Use a separate template for PDF rendering
-                                    total_income=total_income,
-                                    total_expenses=total_expenses,
-                                    taxable_income=taxable_income,
-                                    total_tax=tax,
-                                    tax=tax,
-                                    regime=tax_regime.capitalize(),
-                                    advance_tax_june=advance_tax_june,
-                                    advance_tax_sept=advance_tax_sept,
-                                    advance_tax_dec=advance_tax_dec,
-                                    advance_tax_march=advance_tax_march,
-                                    remaining_tax_due=remaining_tax_due)
-
-    options = {
-        'no-stop-slow-scripts': '',
-        'disable-local-file-access': ''  # Adjust to match your Flask server's base URL
-    }
-
-    pdf = pdfkit.from_string(rendered_html, False, configuration=pdfkit_config, options=options)
-
-    # Create a response object to send the PDF file to the user
-    response = make_response(pdf)
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'attachment; filename=tax_summary.pdf'
-
-    return response
-
-
-# Function to calculate tax under the new regime
-def calculate_new_regime_tax(income):
-    tax = 0
-    if income <= 250000:
-        tax = 0
-    elif income <= 500000:
-        tax = (income - 250000) * 0.05
-    elif income <= 750000:
-        tax = (250000 * 0.05) + ((income - 500000) * 0.10)
-    elif income <= 1000000:
-        tax = (250000 * 0.05) + (250000 * 0.10) + ((income - 750000) * 0.15)
-    elif income <= 1250000:
-        tax = (250000 * 0.05) + (250000 * 0.10) + (250000 * 0.15) + ((income - 1000000) * 0.20)
-    elif income <= 1500000:
-        tax = (250000 * 0.05) + (250000 * 0.10) + (250000 * 0.15) + (250000 * 0.20) + ((income - 1250000) * 0.25)
-    else:
-        tax = (250000 * 0.05) + (250000 * 0.10) + (250000 * 0.15) + (250000 * 0.20) + (250000 * 0.25) + (
-                (income - 1500000) * 0.30)
-    return tax
-
-
-# Function to calculate tax under the old regime
-def calculate_old_regime_tax(income):
-    tax = 0
-    if income <= 250000:
-        tax = 0
-    elif income <= 500000:
-        tax = (income - 250000) * 0.05
-    elif income <= 1000000:
-        tax = (250000 * 0.05) + ((income - 500000) * 0.20)
-    else:
-        tax = (250000 * 0.05) + (500000 * 0.20) + ((income - 1000000) * 0.30)
-    return tax
-
-
-# Function to calculate advance tax payments
-def calculate_advance_tax(total_tax):
-    # 15% of the total tax due by June 15
-    advance_tax_june = total_tax * 0.15
-
-    # Additional 30% due by September 15 (making it 45% total including June)
-    advance_tax_sept = (total_tax * 0.45) - advance_tax_june
-
-    # Additional 30% due by December 15 (making it 75% total including previous payments)
-    advance_tax_dec = (total_tax * 0.75) - (advance_tax_june + advance_tax_sept)
-
-    # Remaining 25% due by March 15 (making it 100% total)
-    advance_tax_march = total_tax - (advance_tax_june + advance_tax_sept + advance_tax_dec)
-
-    # Remaining tax due after March (should ideally be zero)
-    remaining_tax_due = total_tax - (advance_tax_june + advance_tax_sept + advance_tax_dec + advance_tax_march)
-
-    return advance_tax_june, advance_tax_sept, advance_tax_dec, advance_tax_march, remaining_tax_due
-
-
+# ──────────────────────────────────────────────────────────
+# Profile
+# ──────────────────────────────────────────────────────────
 @app.route('/profile')
 def profile():
-    if 'user_id' in session:  # if logged-in
-        query = f"SELECT * FROM user_login WHERE user_id = {session['user_id']}"
-        userdata = execute_query('search', query)
-        return render_template('profile.html', user_name=userdata[0][1], email=userdata[0][2])
-    else:  # if not logged-in
+    if 'user_id' not in session:
         return redirect('/')
+    user = UserLogin.query.get(session['user_id'])
+    return render_template('profile.html', user_name=user.username, email=user.email)
 
 
-@app.route("/updateprofile", methods=['POST'])
+@app.route('/updateprofile', methods=['POST'])
 def update_profile():
-    if 'user_id' in session:
-        name = request.form.get('name')
-        email = request.form.get('email')
-
-        # Fetch current user data
-        query = f"SELECT * FROM user_login WHERE user_id = {session['user_id']}"
-        userdata = execute_query('search', query)
-
-        # Check if the email is already taken by another user
-        query = f"SELECT * FROM user_login WHERE email = '{email}' AND user_id != {session['user_id']}"
-        email_list = execute_query('search', query)
-
-        # Updating User Profile
-        # If both the name and email are different from the current values and the email is not taken by another user
-        if name != userdata[0][1] and email != userdata[0][2] and len(email_list) == 0:
-            query = f"UPDATE user_login SET username = '{name}', email = '{email}' WHERE user_id = {session['user_id']}"
-            execute_query('insert', query)
-            flash("Name and Email updated!")
-
-        # email is already taken by another user
-        elif name != userdata[0][1] and email != userdata[0][2] and len(email_list) > 0:
-            flash("Email already exists, try another!")
-
-        # only email is different and not already taken
-        elif name == userdata[0][1] and email != userdata[0][2] and len(email_list) == 0:
-            query = f"UPDATE user_login SET email = '{email}' WHERE user_id = {session['user_id']}"
-            execute_query('insert', query)
-            flash("Email updated!")
-
-        elif name == userdata[0][1] and email != userdata[0][2] and len(email_list) > 0:
-            flash("Email already exists, try another!")
-
-        # If only the name is different
-        elif name != userdata[0][1] and email == userdata[0][2]:
-            query = f"UPDATE user_login SET username = '{name}' WHERE user_id = {session['user_id']}"
-            execute_query('insert', query)
-            flash("Name updated!")
-        else:
-            flash("No changes made!")
-
-        return redirect('/profile')
-    else:
+    if 'user_id' not in session:
         return redirect('/')
+    user = UserLogin.query.get(session['user_id'])
+    name  = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip()
+    changed = False
+    if name and name != user.username:
+        user.username = name
+        changed = True
+    if email and email != user.email:
+        if UserLogin.query.filter(UserLogin.email == email, UserLogin.user_id != user.user_id).first():
+            flash("Email already in use by another account.", "danger")
+            return redirect('/profile')
+        user.email = email
+        changed = True
+    if changed:
+        db.session.commit()
+        flash("Profile updated successfully! ✅", "success")
+    else:
+        flash("No changes detected.", "info")
+    return redirect('/profile')
+
+# ──────────────────────────────────────────────────────────
+# Contact
+# ──────────────────────────────────────────────────────────
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
 
 
-@app.route('/logout')
-def logout():
-    session.clear()  # Clear all session data
-    flash('You have been logged out.', 'info')  # Optional: Display a logout message
-    return redirect('/')  # Redirect to the login page
+@app.route('/feedback', methods=['POST'])
+def feedback():
+    name    = request.form.get('name')
+    email   = request.form.get('email')
+    phone   = request.form.get('phone', '')
+    subject = request.form.get('sub')
+    message = request.form.get('message')
+    try:
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@pfms.app')
+        msg = Message(f"Contact: {subject}", sender="noreply@pfms.app", recipients=[admin_email])
+        msg.body = f"From: {name}\nEmail: {email}\nPhone: {phone}\n\n{message}"
+        mail.send(msg)
+        flash("Your message has been sent! We'll get back to you soon. 📬", "success")
+    except Exception:
+        flash("Message saved but email delivery failed. Please try again later.", "warning")
+    return redirect('/contact')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
